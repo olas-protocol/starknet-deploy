@@ -1,3 +1,2 @@
-export function helloStarknet() {
-  console.log('Hello Starknet!');
-}
+import { initializeContractManager, ContractManager } from './ContractManager';
+export { initializeContractManager, ContractManager };
