@@ -49,9 +49,6 @@ async function createProjectStructure() {
   }
 }
 
-// Initialize the project
-createProjectStructure();
-
 const exampleDeploymentScript = `
 import "dotenv/config";
 import { initializeContractManager } from "starknet-deploy/dist/index";
@@ -123,5 +120,5 @@ const LOGO = `
 ██║  ██║█████╗  ██████╔╝██║     ██║   ██║ ╚████╔╝                   
 ██║  ██║██╔══╝  ██╔═══╝ ██║     ██║   ██║  ╚██╔╝                    
 ██████╔╝███████╗██║     ███████╗╚██████╔╝   ██║                     
-╚═════╝ ╚══════╝╚═╝     ╚══════╝ ╚═════╝    ╚═╝                     
+╚═════╝ ╚══════╝╚═╝     ╚══════╝ ╚═════╝    ╚═╝                                       
 `;
