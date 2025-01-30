@@ -1,1 +1,1 @@
-export {};
+#!/usr/bin/env node

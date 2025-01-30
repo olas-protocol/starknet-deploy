@@ -1,18 +1,24 @@
+#!/usr/bin/env node
 import {
   ensureDirectoryExists,
   ensureFileExists,
   fetchContractAddress,
   getCompiledCode,
   getPackageName,
+  init_esm_shims,
   logDeploymentDetails,
   logError,
   logInfo,
   logSuccess,
   logWarn,
   saveContractAddress,
-} from './chunk-FQSG3CSA.mjs';
+} from './chunk-PSPFAU3P.mjs';
+
+// src/index.ts
+init_esm_shims();
 
 // src/ContractManager.ts
+init_esm_shims();
 import {
   Account,
   RpcProvider,
@@ -23,6 +29,7 @@ import {
 } from 'starknet';
 
 // src/common.ts
+init_esm_shims();
 function getExplorerUrl(txHash) {
   return process.env.BLOCK_EXPLORER_URL
     ? `${process.env.BLOCK_EXPLORER_URL}/tx/${txHash}`
