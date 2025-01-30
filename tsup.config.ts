@@ -8,4 +8,8 @@ export default defineConfig({
   clean: true,
   skipNodeModulesBundle: true,
   outDir: './dist',
+  banner: {
+    js: '#!/usr/bin/env node',
+  },
+  noExternal: ['commander']
 });

@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import path from 'path';
 import { logInfo, logSuccess, logError } from './logger';
 import { ensureDirectoryExists, getPackageName } from './fileUtils';
