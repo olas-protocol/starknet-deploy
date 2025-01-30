@@ -1,3 +1,1 @@
-export function helloStarknet() {
-  console.log('Hello Starknet!');
-}
+export { initializeContractManager, ContractManager } from './ContractManager';
