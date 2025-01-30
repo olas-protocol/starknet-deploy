@@ -1,2 +1,1 @@
-import { initializeContractManager, ContractManager } from './ContractManager';
-export { initializeContractManager, ContractManager };
+export { initializeContractManager, ContractManager } from './ContractManager';
