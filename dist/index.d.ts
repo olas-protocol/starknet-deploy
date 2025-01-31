@@ -107,6 +107,16 @@ declare function getCompiledCode(contractName: string): Promise<{
   sierraCode: any;
   casmCode: any;
 }>;
+/**
+ * Creates the project structure with the following directories:
+ * - src/scripts/deployments
+ * - src/scripts/tasks
+ */
+declare function createProjectStructure(): Promise<void>;
+declare const exampleDeploymentScript =
+  '\nimport "dotenv/config";\nimport { initializeContractManager } from "starknet-deploy/dist/index";\n\nasync function main() {\n  const contractManager = initializeContractManager();\n\n  await contractManager.deployContract({\n    contractName: "<contract_name>",\n  });\n}\n\nmain()\n  .then(() => process.exit(0))\n  .catch((error) => {\n    console.error(error);\n    process.exit(1);\n  });\n';
+declare const exampleTaskContent =
+  "\nimport { initializeContractManager } from \"starknet-deploy/dist/index\";\nimport { Command } from 'commander';\n\nasync function main() {\n\n  const program = new Command();\n  program\n    .requiredOption('-c, --param <param_type>', 'Param definition')\n\n  program.parse(process.argv);\n  const options = program.opts();\n}\n\nmain().catch((error) => {\n  console.error(error);\n  process.exit(1);\n});";
 
 declare function logInfo(message: string): void;
 declare function logWarn(message: string): void;
@@ -127,8 +137,11 @@ declare function logDeploymentDetails(
 
 export {
   ContractManager,
+  createProjectStructure,
   ensureDirectoryExists,
   ensureFileExists,
+  exampleDeploymentScript,
+  exampleTaskContent,
   fetchContractAddress,
   getCompiledCode,
   getPackageName,

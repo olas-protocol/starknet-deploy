@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 import {
   ContractManager,
+  createProjectStructure,
   ensureDirectoryExists,
   ensureFileExists,
+  exampleDeploymentScript,
+  exampleTaskContent,
   fetchContractAddress,
   getCompiledCode,
   getPackageName,
@@ -13,11 +16,14 @@ import {
   logSuccess,
   logWarn,
   saveContractAddress,
-} from './chunk-ZHOJKTN2.mjs';
+} from './chunk-3L2GTARC.mjs';
 export {
   ContractManager,
+  createProjectStructure,
   ensureDirectoryExists,
   ensureFileExists,
+  exampleDeploymentScript,
+  exampleTaskContent,
   fetchContractAddress,
   getCompiledCode,
   getPackageName,

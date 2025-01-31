@@ -41,8 +41,11 @@ var __toCommonJS = (mod) =>
 var src_exports = {};
 __export(src_exports, {
   ContractManager: () => ContractManager,
+  createProjectStructure: () => createProjectStructure,
   ensureDirectoryExists: () => ensureDirectoryExists,
   ensureFileExists: () => ensureFileExists,
+  exampleDeploymentScript: () => exampleDeploymentScript,
+  exampleTaskContent: () => exampleTaskContent,
   fetchContractAddress: () => fetchContractAddress,
   getCompiledCode: () => getCompiledCode,
   getPackageName: () => getPackageName,
@@ -186,6 +189,108 @@ async function getCompiledCode(contractName) {
     casmCode,
   };
 }
+async function createProjectStructure() {
+  try {
+    console.log('fetching package name');
+    const packageName = await getPackageName();
+    console.log('Package name:', packageName);
+    const scriptsDir = import_path.default.join(process.cwd(), 'src/scripts');
+    console.log(LOGO);
+    logInfo(`Initializing project structure for ${packageName}...`);
+    await ensureDirectoryExists(
+      import_path.default.join(scriptsDir, 'deployments'),
+    );
+    await ensureDirectoryExists(import_path.default.join(scriptsDir, 'tasks'));
+    console.log('Creating example task file');
+    const exampleTaskPath = import_path.default.join(
+      scriptsDir,
+      'tasks',
+      'example_task.ts',
+    );
+    console.log('Example task path:', exampleTaskPath);
+    await import_fs.promises.writeFile(exampleTaskPath, exampleTaskContent);
+    const exampleDeploymentPath = import_path.default.join(
+      scriptsDir,
+      'deployments',
+      'example_deployment.ts',
+    );
+    await import_fs.promises.writeFile(
+      exampleDeploymentPath,
+      exampleDeploymentScript,
+    );
+    const addressesPath = import_path.default.join(
+      scriptsDir,
+      'deployments',
+      'deployed_contract_addresses.json',
+    );
+    await import_fs.promises.writeFile(
+      addressesPath,
+      JSON.stringify({}, null, 2),
+    );
+    logSuccess(
+      '\nStarknet Deploy Project structure created successfully! \u{1F680}',
+    );
+    logInfo(`
+Next steps:
+  1. Add your scripts in src/scripts/tasks
+  2. Store your deployment artifacts in src/scripts/deployments`);
+  } catch (error) {
+    logError(`Failed to create project structure: ${error}`);
+    process.exit(1);
+  }
+}
+var exampleDeploymentScript = `
+import "dotenv/config";
+import { initializeContractManager } from "starknet-deploy/dist/index";
+
+async function main() {
+  const contractManager = initializeContractManager();
+
+  await contractManager.deployContract({
+    contractName: "<contract_name>",
+  });
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+`;
+var exampleTaskContent = `
+import { initializeContractManager } from "starknet-deploy/dist/index";
+import { Command } from 'commander';
+
+async function main() {
+
+  const program = new Command();
+  program
+    .requiredOption('-c, --param <param_type>', 'Param definition')
+
+  program.parse(process.argv);
+  const options = program.opts();
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});`;
+var LOGO = `
+\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2557  \u2588\u2588\u2557\u2588\u2588\u2588\u2557   \u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557
+\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255D\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551 \u2588\u2588\u2554\u255D\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255D
+\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557   \u2588\u2588\u2551   \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D\u2588\u2588\u2588\u2588\u2588\u2554\u255D \u2588\u2588\u2554\u2588\u2588\u2557 \u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2557     \u2588\u2588\u2551   
+\u255A\u2550\u2550\u2550\u2550\u2588\u2588\u2551   \u2588\u2588\u2551   \u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2554\u2550\u2588\u2588\u2557 \u2588\u2588\u2551\u255A\u2588\u2588\u2557\u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u255D     \u2588\u2588\u2551   
+\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551   \u2588\u2588\u2551   \u2588\u2588\u2551  \u2588\u2588\u2551\u2588\u2588\u2551  \u2588\u2588\u2551\u2588\u2588\u2551  \u2588\u2588\u2557\u2588\u2588\u2551 \u255A\u2588\u2588\u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557   \u2588\u2588\u2551   
+\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D   \u255A\u2550\u255D   \u255A\u2550\u255D  \u255A\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u2550\u2550\u255D\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D   \u255A\u2550\u255D   
+                                                                    
+\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2557      \u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2557   \u2588\u2588\u2557                  
+\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551     \u2588\u2588\u2554\u2550\u2550\u2550\u2588\u2588\u2557\u255A\u2588\u2588\u2557 \u2588\u2588\u2554\u255D                  
+\u2588\u2588\u2551  \u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D\u2588\u2588\u2551     \u2588\u2588\u2551   \u2588\u2588\u2551 \u255A\u2588\u2588\u2588\u2588\u2554\u255D                   
+\u2588\u2588\u2551  \u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u255D  \u2588\u2588\u2554\u2550\u2550\u2550\u255D \u2588\u2588\u2551     \u2588\u2588\u2551   \u2588\u2588\u2551  \u255A\u2588\u2588\u2554\u255D                    
+\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2551     \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D   \u2588\u2588\u2551                     
+\u255A\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u255D     \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u255D    \u255A\u2550\u255D                                       
+`;
 
 // src/common.ts
 function getExplorerUrl(txHash) {
@@ -408,8 +513,11 @@ var initializeContractManager = () => {
 0 &&
   (module.exports = {
     ContractManager,
+    createProjectStructure,
     ensureDirectoryExists,
     ensureFileExists,
+    exampleDeploymentScript,
+    exampleTaskContent,
     fetchContractAddress,
     getCompiledCode,
     getPackageName,

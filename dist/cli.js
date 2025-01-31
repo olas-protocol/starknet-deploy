@@ -1238,8 +1238,8 @@ var require_command = __commonJS({
     init_cjs_shims();
     var EventEmitter = require('events').EventEmitter;
     var childProcess = require('child_process');
-    var path3 = require('path');
-    var fs3 = require('fs');
+    var path2 = require('path');
+    var fs2 = require('fs');
     var process2 = require('process');
     var { Argument: Argument2, humanReadableArgName } = require_argument();
     var { CommanderError: CommanderError2 } = require_error();
@@ -2268,7 +2268,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
         executableDir,
         subcommandName,
       ) {
-        if (fs3.existsSync(executableFile)) return;
+        if (fs2.existsSync(executableFile)) return;
         const executableDirMessage = executableDir
           ? `searched for local subcommand relative to directory '${executableDir}'`
           : 'no directory for search for local subcommand, use .executableDir() to supply a custom directory';
@@ -2288,11 +2288,11 @@ Expecting one of '${allowedValues.join("', '")}'`);
         let launchWithNode = false;
         const sourceExt = ['.js', '.ts', '.tsx', '.mjs', '.cjs'];
         function findFile(baseDir, baseName) {
-          const localBin = path3.resolve(baseDir, baseName);
-          if (fs3.existsSync(localBin)) return localBin;
-          if (sourceExt.includes(path3.extname(baseName))) return void 0;
+          const localBin = path2.resolve(baseDir, baseName);
+          if (fs2.existsSync(localBin)) return localBin;
+          if (sourceExt.includes(path2.extname(baseName))) return void 0;
           const foundExt = sourceExt.find((ext) =>
-            fs3.existsSync(`${localBin}${ext}`),
+            fs2.existsSync(`${localBin}${ext}`),
           );
           if (foundExt) return `${localBin}${foundExt}`;
           return void 0;
@@ -2305,21 +2305,21 @@ Expecting one of '${allowedValues.join("', '")}'`);
         if (this._scriptPath) {
           let resolvedScriptPath;
           try {
-            resolvedScriptPath = fs3.realpathSync(this._scriptPath);
+            resolvedScriptPath = fs2.realpathSync(this._scriptPath);
           } catch {
             resolvedScriptPath = this._scriptPath;
           }
-          executableDir = path3.resolve(
-            path3.dirname(resolvedScriptPath),
+          executableDir = path2.resolve(
+            path2.dirname(resolvedScriptPath),
             executableDir,
           );
         }
         if (executableDir) {
           let localFile = findFile(executableDir, executableFile);
           if (!localFile && !subcommand._executableFile && this._scriptPath) {
-            const legacyName = path3.basename(
+            const legacyName = path2.basename(
               this._scriptPath,
-              path3.extname(this._scriptPath),
+              path2.extname(this._scriptPath),
             );
             if (legacyName !== this._name) {
               localFile = findFile(
@@ -2330,7 +2330,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
           }
           executableFile = localFile || executableFile;
         }
-        launchWithNode = sourceExt.includes(path3.extname(executableFile));
+        launchWithNode = sourceExt.includes(path2.extname(executableFile));
         let proc;
         if (process2.platform !== 'win32') {
           if (launchWithNode) {
@@ -3256,7 +3256,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @return {Command}
        */
       nameFromFilename(filename) {
-        this._name = path3.basename(filename, path3.extname(filename));
+        this._name = path2.basename(filename, path2.extname(filename));
         return this;
       }
       /**
@@ -3270,9 +3270,9 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @param {string} [path]
        * @return {(string|null|Command)}
        */
-      executableDir(path4) {
-        if (path4 === void 0) return this._executableDir;
-        this._executableDir = path4;
+      executableDir(path3) {
+        if (path3 === void 0) return this._executableDir;
+        this._executableDir = path3;
         return this;
       }
       /**
@@ -3577,7 +3577,24 @@ var require_commander = __commonJS({
 
 // src/cli.ts
 init_cjs_shims();
-var import_path2 = __toESM(require('path'));
+
+// node_modules/commander/esm.mjs
+init_cjs_shims();
+var import_index = __toESM(require_commander(), 1);
+var {
+  program,
+  createCommand,
+  createArgument,
+  createOption,
+  CommanderError,
+  InvalidArgumentError,
+  InvalidOptionArgumentError,
+  // deprecated old name
+  Command,
+  Argument,
+  Option,
+  Help,
+} = import_index.default;
 
 // src/index.ts
 init_cjs_shims();
@@ -3637,63 +3654,41 @@ async function getPackageName() {
     throw error;
   }
 }
-
-// src/common.ts
-init_cjs_shims();
-
-// src/cli.ts
-var import_fs2 = require('fs');
-
-// node_modules/commander/esm.mjs
-init_cjs_shims();
-var import_index = __toESM(require_commander(), 1);
-var {
-  program,
-  createCommand,
-  createArgument,
-  createOption,
-  CommanderError,
-  InvalidArgumentError,
-  InvalidOptionArgumentError,
-  // deprecated old name
-  Command,
-  Argument,
-  Option,
-  Help,
-} = import_index.default;
-
-// src/cli.ts
 async function createProjectStructure() {
   try {
+    console.log('fetching package name');
     const packageName = await getPackageName();
-    const scriptsDir = import_path2.default.join(process.cwd(), 'src/scripts');
+    console.log('Package name:', packageName);
+    const scriptsDir = import_path.default.join(process.cwd(), 'src/scripts');
     console.log(LOGO);
     logInfo(`Initializing project structure for ${packageName}...`);
     await ensureDirectoryExists(
-      import_path2.default.join(scriptsDir, 'deployments'),
+      import_path.default.join(scriptsDir, 'deployments'),
     );
-    await ensureDirectoryExists(import_path2.default.join(scriptsDir, 'tasks'));
-    const exampleTaskPath = import_path2.default.join(
+    await ensureDirectoryExists(import_path.default.join(scriptsDir, 'tasks'));
+    console.log('Creating example task file');
+    const exampleTaskPath = import_path.default.join(
       scriptsDir,
       'tasks',
       'example_task.ts',
     );
-    await import_fs2.promises.writeFile(exampleTaskPath, exampleTaskContent);
-    const exampleDeploymentPath = import_path2.default.join(
+    console.log('Example task path:', exampleTaskPath);
+    await import_fs.promises.writeFile(exampleTaskPath, exampleTaskContent);
+    const exampleDeploymentPath = import_path.default.join(
       scriptsDir,
       'deployments',
       'example_deployment.ts',
     );
-    await import_fs2.promises.writeFile(
+    await import_fs.promises.writeFile(
       exampleDeploymentPath,
       exampleDeploymentScript,
     );
-    const addressesPath = import_path2.default.join(
+    const addressesPath = import_path.default.join(
       scriptsDir,
       'deployments',
       'deployed_contract_addresses.json',
     );
-    await import_fs2.promises.writeFile(
+    await import_fs.promises.writeFile(
       addressesPath,
       JSON.stringify({}, null, 2),
     );
@@ -3746,19 +3741,6 @@ main().catch((error) => {
   console.error(error);
   process.exit(1);
 });`;
-var program2 = new Command();
-program2
-  .name('starknet-deploy')
-  .description('CLI tool for StarkNet contract deployment')
-  .version('0.0.1');
-program2
-  .command('init')
-  .description('Initialize a new StarkNet Deploy project')
-  .action(createProjectStructure);
-program2.parse(process.argv);
-if (!process.argv.slice(2).length) {
-  program2.outputHelp();
-}
 var LOGO = `
 \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2557  \u2588\u2588\u2557\u2588\u2588\u2588\u2557   \u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557
 \u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255D\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551 \u2588\u2588\u2554\u255D\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255D
@@ -3774,3 +3756,21 @@ var LOGO = `
 \u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2551     \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D   \u2588\u2588\u2551                     
 \u255A\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u255D     \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u255D    \u255A\u2550\u255D                                       
 `;
+
+// src/common.ts
+init_cjs_shims();
+
+// src/cli.ts
+var program2 = new Command();
+program2
+  .name('starknet-deploy')
+  .description('CLI tool for StarkNet contract deployment')
+  .version('0.0.1');
+program2
+  .command('init')
+  .description('Initialize a new StarkNet Deploy project')
+  .action(createProjectStructure);
+program2.parse(process.argv);
+if (!process.argv.slice(2).length) {
+  program2.outputHelp();
+}

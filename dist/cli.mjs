@@ -3,13 +3,9 @@ import {
   __commonJS,
   __require,
   __toESM,
-  ensureDirectoryExists,
-  getPackageName,
+  createProjectStructure,
   init_esm_shims,
-  logError,
-  logInfo,
-  logSuccess,
-} from './chunk-ZHOJKTN2.mjs';
+} from './chunk-3L2GTARC.mjs';
 
 // node_modules/commander/lib/error.js
 var require_error = __commonJS({
@@ -1199,8 +1195,8 @@ var require_command = __commonJS({
     init_esm_shims();
     var EventEmitter = __require('node:events').EventEmitter;
     var childProcess = __require('node:child_process');
-    var path2 = __require('node:path');
-    var fs2 = __require('node:fs');
+    var path = __require('node:path');
+    var fs = __require('node:fs');
     var process2 = __require('node:process');
     var { Argument: Argument2, humanReadableArgName } = require_argument();
     var { CommanderError: CommanderError2 } = require_error();
@@ -2229,7 +2225,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
         executableDir,
         subcommandName,
       ) {
-        if (fs2.existsSync(executableFile)) return;
+        if (fs.existsSync(executableFile)) return;
         const executableDirMessage = executableDir
           ? `searched for local subcommand relative to directory '${executableDir}'`
           : 'no directory for search for local subcommand, use .executableDir() to supply a custom directory';
@@ -2249,11 +2245,11 @@ Expecting one of '${allowedValues.join("', '")}'`);
         let launchWithNode = false;
         const sourceExt = ['.js', '.ts', '.tsx', '.mjs', '.cjs'];
         function findFile(baseDir, baseName) {
-          const localBin = path2.resolve(baseDir, baseName);
-          if (fs2.existsSync(localBin)) return localBin;
-          if (sourceExt.includes(path2.extname(baseName))) return void 0;
+          const localBin = path.resolve(baseDir, baseName);
+          if (fs.existsSync(localBin)) return localBin;
+          if (sourceExt.includes(path.extname(baseName))) return void 0;
           const foundExt = sourceExt.find((ext) =>
-            fs2.existsSync(`${localBin}${ext}`),
+            fs.existsSync(`${localBin}${ext}`),
           );
           if (foundExt) return `${localBin}${foundExt}`;
           return void 0;
@@ -2266,21 +2262,21 @@ Expecting one of '${allowedValues.join("', '")}'`);
         if (this._scriptPath) {
           let resolvedScriptPath;
           try {
-            resolvedScriptPath = fs2.realpathSync(this._scriptPath);
+            resolvedScriptPath = fs.realpathSync(this._scriptPath);
           } catch {
             resolvedScriptPath = this._scriptPath;
           }
-          executableDir = path2.resolve(
-            path2.dirname(resolvedScriptPath),
+          executableDir = path.resolve(
+            path.dirname(resolvedScriptPath),
             executableDir,
           );
         }
         if (executableDir) {
           let localFile = findFile(executableDir, executableFile);
           if (!localFile && !subcommand._executableFile && this._scriptPath) {
-            const legacyName = path2.basename(
+            const legacyName = path.basename(
               this._scriptPath,
-              path2.extname(this._scriptPath),
+              path.extname(this._scriptPath),
             );
             if (legacyName !== this._name) {
               localFile = findFile(
@@ -2291,7 +2287,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
           }
           executableFile = localFile || executableFile;
         }
-        launchWithNode = sourceExt.includes(path2.extname(executableFile));
+        launchWithNode = sourceExt.includes(path.extname(executableFile));
         let proc;
         if (process2.platform !== 'win32') {
           if (launchWithNode) {
@@ -3217,7 +3213,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @return {Command}
        */
       nameFromFilename(filename) {
-        this._name = path2.basename(filename, path2.extname(filename));
+        this._name = path.basename(filename, path.extname(filename));
         return this;
       }
       /**
@@ -3231,9 +3227,9 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @param {string} [path]
        * @return {(string|null|Command)}
        */
-      executableDir(path3) {
-        if (path3 === void 0) return this._executableDir;
-        this._executableDir = path3;
+      executableDir(path2) {
+        if (path2 === void 0) return this._executableDir;
+        this._executableDir = path2;
         return this;
       }
       /**
@@ -3538,8 +3534,6 @@ var require_commander = __commonJS({
 
 // src/cli.ts
 init_esm_shims();
-import path from 'path';
-import { promises as fs } from 'fs';
 
 // node_modules/commander/esm.mjs
 init_esm_shims();
@@ -3560,77 +3554,6 @@ var {
 } = import_index.default;
 
 // src/cli.ts
-async function createProjectStructure() {
-  try {
-    const packageName = await getPackageName();
-    const scriptsDir = path.join(process.cwd(), 'src/scripts');
-    console.log(LOGO);
-    logInfo(`Initializing project structure for ${packageName}...`);
-    await ensureDirectoryExists(path.join(scriptsDir, 'deployments'));
-    await ensureDirectoryExists(path.join(scriptsDir, 'tasks'));
-    const exampleTaskPath = path.join(scriptsDir, 'tasks', 'example_task.ts');
-    await fs.writeFile(exampleTaskPath, exampleTaskContent);
-    const exampleDeploymentPath = path.join(
-      scriptsDir,
-      'deployments',
-      'example_deployment.ts',
-    );
-    await fs.writeFile(exampleDeploymentPath, exampleDeploymentScript);
-    const addressesPath = path.join(
-      scriptsDir,
-      'deployments',
-      'deployed_contract_addresses.json',
-    );
-    await fs.writeFile(addressesPath, JSON.stringify({}, null, 2));
-    logSuccess(
-      '\nStarknet Deploy Project structure created successfully! \u{1F680}',
-    );
-    logInfo(`
-Next steps:
-  1. Add your scripts in src/scripts/tasks
-  2. Store your deployment artifacts in src/scripts/deployments`);
-  } catch (error) {
-    logError(`Failed to create project structure: ${error}`);
-    process.exit(1);
-  }
-}
-var exampleDeploymentScript = `
-import "dotenv/config";
-import { initializeContractManager } from "starknet-deploy/dist/index";
-
-async function main() {
-  const contractManager = initializeContractManager();
-
-  await contractManager.deployContract({
-    contractName: "<contract_name>",
-  });
-}
-
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
-`;
-var exampleTaskContent = `
-import { initializeContractManager } from "starknet-deploy/dist/index";
-import { Command } from 'commander';
-
-async function main() {
-
-  const program = new Command();
-  program
-    .requiredOption('-c, --param <param_type>', 'Param definition')
-
-  program.parse(process.argv);
-  const options = program.opts();
-}
-
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});`;
 var program2 = new Command();
 program2
   .name('starknet-deploy')
@@ -3644,18 +3567,3 @@ program2.parse(process.argv);
 if (!process.argv.slice(2).length) {
   program2.outputHelp();
 }
-var LOGO = `
-\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2557  \u2588\u2588\u2557\u2588\u2588\u2588\u2557   \u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557
-\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255D\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551 \u2588\u2588\u2554\u255D\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255D
-\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557   \u2588\u2588\u2551   \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D\u2588\u2588\u2588\u2588\u2588\u2554\u255D \u2588\u2588\u2554\u2588\u2588\u2557 \u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2557     \u2588\u2588\u2551   
-\u255A\u2550\u2550\u2550\u2550\u2588\u2588\u2551   \u2588\u2588\u2551   \u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2554\u2550\u2588\u2588\u2557 \u2588\u2588\u2551\u255A\u2588\u2588\u2557\u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u255D     \u2588\u2588\u2551   
-\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551   \u2588\u2588\u2551   \u2588\u2588\u2551  \u2588\u2588\u2551\u2588\u2588\u2551  \u2588\u2588\u2551\u2588\u2588\u2551  \u2588\u2588\u2557\u2588\u2588\u2551 \u255A\u2588\u2588\u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557   \u2588\u2588\u2551   
-\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D   \u255A\u2550\u255D   \u255A\u2550\u255D  \u255A\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u2550\u2550\u255D\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D   \u255A\u2550\u255D   
-                                                                    
-\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2557      \u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2557   \u2588\u2588\u2557                  
-\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551     \u2588\u2588\u2554\u2550\u2550\u2550\u2588\u2588\u2557\u255A\u2588\u2588\u2557 \u2588\u2588\u2554\u255D                  
-\u2588\u2588\u2551  \u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D\u2588\u2588\u2551     \u2588\u2588\u2551   \u2588\u2588\u2551 \u255A\u2588\u2588\u2588\u2588\u2554\u255D                   
-\u2588\u2588\u2551  \u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u255D  \u2588\u2588\u2554\u2550\u2550\u2550\u255D \u2588\u2588\u2551     \u2588\u2588\u2551   \u2588\u2588\u2551  \u255A\u2588\u2588\u2554\u255D                    
-\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2551     \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D   \u2588\u2588\u2551                     
-\u255A\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u255D     \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u255D    \u255A\u2550\u255D                                       
-`;

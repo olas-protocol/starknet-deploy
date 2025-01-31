@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import * as fileUtils from '../fileUtils';
-import { describe, expect, test, beforeEach, it, jest } from '@jest/globals';
+import { describe, expect, beforeEach, it, jest } from '@jest/globals';
 import toml from 'toml';
 import path from 'path';
 
@@ -102,7 +102,7 @@ describe('FileUtils', () => {
       );
 
       //Mock Implementation
-      (fs.readFile as jest.Mock).mockImplementation((filePath: any) => {
+      (fs.readFile as jest.Mock).mockImplementation((filePath: unknown) => {
         switch (filePath) {
           case scarbPath:
             return Promise.resolve('[package]\nname = `${mockPackageName}`');
