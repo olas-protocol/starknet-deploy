@@ -5,7 +5,7 @@ import { logSuccess, logError } from './logger';
 import { logInfo } from './logger';
 const projectRoot = process.cwd();
 
-export async function ensureDirectoryExists(dirPath: string) {
+export async function ensureDirectoryExists(dirPath: string): Promise<void> {
   try {
     await fs.mkdir(dirPath, { recursive: true });
     logSuccess(`Created directory: ${dirPath}`);
@@ -16,7 +16,7 @@ export async function ensureDirectoryExists(dirPath: string) {
 }
 
 // Ensures file exists or creates an empty JSON file if not
-export async function ensureFileExists(filePath: string) {
+export async function ensureFileExists(filePath: string): Promise<void> {
   if (!existsSync(filePath)) {
     console.log('File does not exist, creating a new one.');
     await fs.writeFile(filePath, JSON.stringify({}));
@@ -122,7 +122,9 @@ export async function getCompiledCode(contractName: string) {
  */
 export async function createProjectStructure() {
   try {
+    console.log('fetching package name');
     const packageName = await getPackageName();
+    console.log('Package name:', packageName);
     const scriptsDir = path.join(process.cwd(), 'src/scripts');
     console.log(LOGO);
     logInfo(`Initializing project structure for ${packageName}...`);
@@ -130,9 +132,11 @@ export async function createProjectStructure() {
     // Create scripts directory and its subdirectories
     await ensureDirectoryExists(path.join(scriptsDir, 'deployments'));
     await ensureDirectoryExists(path.join(scriptsDir, 'tasks'));
-
+    console.log('Creating example task file');
     // Create example task file
     const exampleTaskPath = path.join(scriptsDir, 'tasks', 'example_task.ts');
+    console.log('Example task path:', exampleTaskPath);
+
     await fs.writeFile(exampleTaskPath, exampleTaskContent);
 
     // Create example deployment script
@@ -161,7 +165,7 @@ export async function createProjectStructure() {
 }
 
 // Example deployment script content
-const exampleDeploymentScript = `
+export const exampleDeploymentScript = `
 import "dotenv/config";
 import { initializeContractManager } from "starknet-deploy/dist/index";
 
@@ -182,7 +186,7 @@ main()
 `;
 
 // Example task content
-const exampleTaskContent = `
+export const exampleTaskContent = `
 import { initializeContractManager } from "starknet-deploy/dist/index";
 import { Command } from 'commander';
 
