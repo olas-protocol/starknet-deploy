@@ -23,6 +23,7 @@
     "typescript-eslint": "^8.13.0"
   },
   "dependencies": {
+    "abi-wan-kanabi": "^2.1.0-rc.1",
     "colors": "^1.4.0",
     "dotenv": "^16.4.5",
     "starknet": "^6.11.0",
