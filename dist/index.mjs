@@ -5,28 +5,28 @@ import {
   CallData,
   stark,
   Contract,
-  ReceiptTx,
-} from 'starknet';
+  ReceiptTx
+} from "starknet";
 
 // src/fileUtils.ts
-import { promises as fs, existsSync } from 'fs';
-import path from 'path';
-import toml from 'toml';
+import { promises as fs, existsSync } from "fs";
+import path from "path";
+import toml from "toml";
 
 // src/logger.ts
-import colors from 'colors';
+import colors from "colors";
 function formatLog(level, message) {
   return `
 [${level}] ${message}`;
 }
 function logInfo(message) {
-  console.log(colors.blue(formatLog('INFO' /* INFO */, message)));
+  console.log(colors.blue(formatLog("INFO" /* INFO */, message)));
 }
 function logError(message) {
-  console.error(colors.red(formatLog('ERROR' /* ERROR */, message)));
+  console.error(colors.red(formatLog("ERROR" /* ERROR */, message)));
 }
 function logSuccess(message) {
-  console.log(colors.green(formatLog('SUCCESS' /* SUCCESS */, message)));
+  console.log(colors.green(formatLog("SUCCESS" /* SUCCESS */, message)));
 }
 function logDeploymentDetails(contractName, classHash, contractAddress) {
   const deploymentMessage = `
@@ -42,19 +42,19 @@ function logDeploymentDetails(contractName, classHash, contractAddress) {
 var projectRoot = process.cwd();
 async function ensureFileExists(filePath) {
   if (!existsSync(filePath)) {
-    console.log('File does not exist, creating a new one.');
+    console.log("File does not exist, creating a new one.");
     await fs.writeFile(filePath, JSON.stringify({}));
   }
 }
 async function saveContractAddress(contractName, contractAddress) {
   const filePath = path.join(
     projectRoot,
-    'src/scripts/deployments',
-    'deployed_contract_addresses.json',
+    "src/scripts/deployments",
+    "deployed_contract_addresses.json"
   );
   try {
     await ensureFileExists(filePath);
-    const data = await fs.readFile(filePath, 'utf8');
+    const data = await fs.readFile(filePath, "utf8");
     const jsonData = data.trim() ? JSON.parse(data) : {};
     jsonData[contractName] = contractAddress;
     await fs.writeFile(filePath, JSON.stringify(jsonData, null, 2));
@@ -67,11 +67,11 @@ async function saveContractAddress(contractName, contractAddress) {
 async function fetchContractAddress(contractName) {
   const filePath = path.join(
     projectRoot,
-    'src/scripts/deployments',
-    'deployed_contract_addresses.json',
+    "src/scripts/deployments",
+    "deployed_contract_addresses.json"
   );
   try {
-    const data = await fs.readFile(filePath, 'utf8');
+    const data = await fs.readFile(filePath, "utf8");
     const jsonData = JSON.parse(data);
     return jsonData[contractName];
   } catch (error) {
@@ -80,9 +80,9 @@ async function fetchContractAddress(contractName) {
   }
 }
 async function getPackageName() {
-  const tomlPath = path.join(projectRoot, 'Scarb.toml');
+  const tomlPath = path.join(projectRoot, "Scarb.toml");
   try {
-    const tomlData = await fs.readFile(tomlPath, 'utf8');
+    const tomlData = await fs.readFile(tomlPath, "utf8");
     const parsedToml = toml.parse(tomlData);
     return parsedToml.package.name;
   } catch (error) {
@@ -94,37 +94,35 @@ async function getCompiledCode(contractName) {
   const packageName = await getPackageName();
   const sierraFilePath = path.join(
     projectRoot,
-    'target/dev',
-    `${packageName}_${contractName}.contract_class.json`,
+    "target/dev",
+    `${packageName}_${contractName}.contract_class.json`
   );
   const casmFilePath = path.join(
     projectRoot,
-    'target/dev',
-    `${packageName}_${contractName}.compiled_contract_class.json`,
+    "target/dev",
+    `${packageName}_${contractName}.compiled_contract_class.json`
   );
   const code = [sierraFilePath, casmFilePath].map(async (filePath) => {
     const file = await fs.readFile(filePath);
-    return JSON.parse(file.toString('ascii'));
+    return JSON.parse(file.toString("ascii"));
   });
   const [sierraCode, casmCode] = await Promise.all(code);
   return {
     sierraCode,
-    casmCode,
+    casmCode
   };
 }
 
 // src/common.ts
 function getExplorerUrl(txHash) {
-  return process.env.BLOCK_EXPLORER_URL
-    ? `${process.env.BLOCK_EXPLORER_URL}/tx/${txHash}`
-    : txHash;
+  return process.env.BLOCK_EXPLORER_URL ? `${process.env.BLOCK_EXPLORER_URL}/tx/${txHash}` : txHash;
 }
 function handleError(message) {
   logError(message);
   throw new Error(message);
 }
 function replacer(_, value) {
-  if (typeof value === 'bigint') {
+  if (typeof value === "bigint") {
     return value.toString();
   } else {
     return value;
@@ -139,6 +137,37 @@ var ContractManager = class {
     this.provider = new RpcProvider({ nodeUrl: rpcEndpoint });
     this.account = new Account(this.provider, accountAddress, privateKey);
   }
+  async getAbi(contractName) {
+    const { sierraCode } = await getCompiledCode(contractName);
+    return sierraCode.abi;
+  }
+  async executeTransaciton(params) {
+    const { functionName, args, contract } = params;
+    const { bufferPercentage = 20 } = params.options || {};
+    let contractInstance;
+    if (typeof contract === "string") {
+      contractInstance = await this.getContractInstance(contract);
+    } else {
+      contractInstance = contract;
+    }
+    try {
+      const txResponse = await contractInstance.functions[functionName](
+        args
+        //{ maxFee },
+      );
+      const txReceipt = await this.provider.waitForTransaction(
+        txResponse.transaction_hash
+      );
+      this.handleTxReceipt(txReceipt, functionName);
+      return txResponse.transaction_hash;
+    } catch (error) {
+      logError(
+        `An error occurred during ${functionName} execution of ${functionName} function:`
+      );
+      console.error(error);
+      throw error;
+    }
+  }
   /**
    * Deploys a contract with the given configuration.
    *
@@ -150,25 +179,25 @@ var ContractManager = class {
   async deployContract(config) {
     const { contractName, constructorArgs } = config;
     logInfo(
-      `Deploying contract: ${contractName}, with initial args: ${JSON.stringify(constructorArgs, replacer, 2)}`,
+      `Deploying contract: ${contractName}, with initial args: ${JSON.stringify(constructorArgs, replacer, 2)}`
     );
     try {
       const { sierraCode, casmCode } = await getCompiledCode(contractName);
       let constructorCalldata;
       if (constructorArgs) {
         const callData = new CallData(sierraCode.abi);
-        constructorCalldata = callData.compile('constructor', constructorArgs);
+        constructorCalldata = callData.compile("constructor", constructorArgs);
       }
       const deployResponse = await this.account.declareAndDeploy({
         contract: sierraCode,
         casm: casmCode,
         constructorCalldata,
-        salt: stark.randomAddress(),
+        salt: stark.randomAddress()
       });
       logDeploymentDetails(
         contractName,
         deployResponse.declare.class_hash,
-        deployResponse.deploy.address,
+        deployResponse.deploy.address
       );
       await saveContractAddress(contractName, deployResponse.deploy.address);
     } catch (error) {
@@ -190,10 +219,14 @@ var ContractManager = class {
     }
     const { sierraCode } = await getCompiledCode(contractName);
     const contract_abi = sierraCode.abi;
-    const contract = new Contract(contract_abi, contractAddress, this.provider);
+    const contract = new Contract(
+      contract_abi,
+      contractAddress,
+      this.provider
+    );
     contract.connect(this.account);
     logSuccess(
-      `Connected to ${contractName} contract with address ${this.account.address}`,
+      `Connected to ${contractName} contract with address ${this.account.address}`
     );
     return contract;
   }
@@ -204,67 +237,21 @@ var ContractManager = class {
    */
   async connectToDeployedContract(contractAddress) {
     try {
-      const { abi: contractAbi } =
-        await this.provider.getClassAt(contractAddress);
+      const { abi: contractAbi } = await this.provider.getClassAt(contractAddress);
       if (!contractAbi) {
         throw new Error(
-          `No ABI found for contract at address ${contractAddress}`,
+          `No ABI found for contract at address ${contractAddress}`
         );
       }
       const contract = new Contract(
         contractAbi,
         contractAddress,
-        this.provider,
+        this.provider
       );
       contract.connect(this.account);
       return contract;
     } catch (error) {
       logError(`Failed to connect to contract at address ${contractAddress}:`);
-      throw error;
-    }
-  }
-  /**
-   * Executes a function on a deployed contract.
-   * @param contract Contract instance or contract address.
-   * @param functionName The name of the function to call on the contract.
-   * @param args The arguments for the function.
-   * @param bufferPercentage - Optional. The percentage buffer to add to the max fee (default is 20%).
-   * @returns A promise that resolves with the transaction receipt.
-   * @throws Will throw an error if the transaction fails.
-   */
-  async executeTransaction(
-    contract,
-    functionName,
-    args = [],
-    bufferPercentage = 20,
-  ) {
-    let contractInstance;
-    if (typeof contract === 'string') {
-      contractInstance = await this.connectToDeployedContract(contract);
-    } else {
-      contractInstance = contract;
-    }
-    const maxFee = await this.estimateMaxFee(
-      contractInstance,
-      functionName,
-      args,
-      bufferPercentage,
-    );
-    try {
-      const txResponse = await contractInstance.functions[functionName](
-        ...args,
-        { maxFee },
-      );
-      const txReceipt = await this.provider.waitForTransaction(
-        txResponse.transaction_hash,
-      );
-      this.handleTxReceipt(txReceipt, functionName);
-      return txResponse.transaction_hash;
-    } catch (error) {
-      logError(
-        `An error occurred during ${functionName} execution of ${functionName} function:`,
-      );
-      console.error(error);
       throw error;
     }
   }
@@ -278,13 +265,12 @@ var ContractManager = class {
    */
   async estimateMaxFee(contract, functionName, functionArgs, bufferPercentage) {
     const feeEstimate = await contract.estimateFee[functionName](
-      ...functionArgs,
+      functionArgs
     );
     const suggestedMaxFee = BigInt(feeEstimate.suggestedMaxFee);
-    const maxFee =
-      (suggestedMaxFee * BigInt(100 + bufferPercentage)) / BigInt(100);
+    const maxFee = suggestedMaxFee * BigInt(100 + bufferPercentage) / BigInt(100);
     logInfo(
-      `Suggested max fee for ${functionName}: ${suggestedMaxFee}, Max fee with buffer: ${maxFee}`,
+      `Suggested max fee for ${functionName}: ${suggestedMaxFee}, Max fee with buffer: ${maxFee}`
     );
     return maxFee;
   }
@@ -295,7 +281,7 @@ var ContractManager = class {
       success: (successReceipt) => {
         logSuccess(
           `${operationName} transaction succeeded
-Explorer URL: ${getExplorerUrl(successReceipt.transaction_hash)}`,
+Explorer URL: ${getExplorerUrl(successReceipt.transaction_hash)}`
         );
       },
       reverted: (revertedReceipt) => {
@@ -309,7 +295,7 @@ Explorer URL: ${getExplorerUrl(successReceipt.transaction_hash)}`,
       _: () => {
         const message = `${operationName} transaction failed with unknown error`;
         handleError(message);
-      },
+      }
     });
   }
 };
@@ -318,8 +304,11 @@ var initializeContractManager = () => {
   const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
   const accountAddress = process.env.DEPLOYER_ADDRESS;
   if (!rpcEndpoint || !privateKey || !accountAddress) {
-    throw new Error('Missing required environment variables');
+    throw new Error("Missing required environment variables");
   }
   return new ContractManager(rpcEndpoint, privateKey, accountAddress);
 };
-export { ContractManager, initializeContractManager };
+export {
+  ContractManager,
+  initializeContractManager
+};
