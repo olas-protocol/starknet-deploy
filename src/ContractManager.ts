@@ -6,6 +6,8 @@ import {
   Contract,
   GetTxReceiptResponseWithoutHelper,
   ReceiptTx,
+  Abi,
+  RawArgsArray,
 } from 'starknet';
 import {
   getCompiledCode,
@@ -14,72 +16,13 @@ import {
 } from './fileUtils';
 import { logError, logInfo, logSuccess, logDeploymentDetails } from './logger';
 import { getExplorerUrl, handleError, replacer } from './common';
+import { ExtractFunctionNames, FunctionResponse } from './contract';
+import { Calldata, FunctionArgs } from 'abi-wan-kanabi/kanabi';
 interface DeploymentConfig {
   contractName: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructorArgs?: Record<string, any>;
 }
-
-import * as contractAbis from './contract_abis';
-import type {
-  Abi,
-  ExtractAbiEnum,
-  ExtractAbiEnumNames,
-  FunctionRet,
-  ExtractAbiFunctions,
-  ExtractAbiEventNames,
-  AbiEventMember,
-  StringToPrimitiveType,
-  EventToPrimitiveType,
-} from 'abi-wan-kanabi/kanabi';
-import { FunctionArgs } from 'abi-wan-kanabi/kanabi';
-import { call } from 'abi-wan-kanabi';
-
-export type AbiStateMutability = 'view' | 'external';
-
-export type ExtractFunctionNames<
-  TAbi extends Abi,
-  TStateMutability extends AbiStateMutability,
-> = Extract<
-  ExtractAbiFunctions<TAbi>,
-  { state_mutability: TStateMutability }
->['name'];
-
-export type ContractAbis = typeof contractAbis;
-export type ContractNames = keyof ContractAbis;
-
-type CallOptionForContract<
-  T extends ContractNames,
-  S extends AbiStateMutability,
-  TAbi extends Abi = typeof abi,
-> = {
-  // Map over all external function names in the contract's ABI
-  [F in ExtractFunctionNames<TAbi, S>]: {
-    contractName: T;
-    functionName: F;
-    args?: FunctionArgs<TAbi, F>;
-    address?: `0x${string}`;
-  };
-}[ExtractFunctionNames<TAbi, S>];
-
-// Union types of all possible call options across all contracts
-export type CallOptionWrite = {
-  [T in ContractNames]: CallOptionForContract<T, 'external'>;
-}[ContractNames];
-
-
-function callContract<T extends ContractNames>(
-  contractName: T,
-  options: CallOptionWrite,
-): void {
-  console.log
-}
-callContract('registry', {
-  contractName: 'opinion_market',
-  functionName: 'vote',
-  args: [true, false, 100],
-});
-/*
 
 /**
  * Provides methods for deploying and interacting with contracts.
@@ -91,6 +34,55 @@ export class ContractManager {
   constructor(rpcEndpoint: string, privateKey: string, accountAddress: string) {
     this.provider = new RpcProvider({ nodeUrl: rpcEndpoint });
     this.account = new Account(this.provider, accountAddress, privateKey);
+  }
+
+  async getAbi(contractName: string): Promise<Abi> {
+    const { sierraCode } = await getCompiledCode(contractName);
+    return sierraCode.abi;
+  }
+
+  async executeTransaciton<
+    TAbi extends Abi,
+    TFunctionName extends ExtractFunctionNames<TAbi, 'external'>,
+    TArgs extends FunctionArgs<TAbi, TFunctionName>,
+    TFunctionResponse extends FunctionResponse<TAbi, TFunctionName>,
+  >(params: {
+    abi: TAbi;
+    contract: string;
+    functionName: TFunctionName;
+    args: TArgs;
+    options?: { bufferPercentage?: number };
+  }): Promise<TFunctionResponse | any> {
+    const { functionName, args, contract } = params;
+    const { bufferPercentage = 20 } = params.options || {};
+    let contractInstance: Contract;
+    // Determine if contract is an instance or an address
+    if (typeof contract === 'string') {
+      // It's a contract address, connect to the deployed contract
+      contractInstance = await this.getContractInstance(contract);
+    } else {
+      contractInstance = contract;
+    }
+    try {
+      // Execute the contract function
+      const txResponse = await contractInstance.functions[functionName]!(
+        args as CallData,
+        //{ maxFee },
+      );
+      // Wait for the transaction to be mined
+      const txReceipt = await this.provider.waitForTransaction(
+        txResponse.transaction_hash,
+      );
+      this.handleTxReceipt(txReceipt, functionName);
+
+      return txResponse.transaction_hash;
+    } catch (error) {
+      logError(
+        `An error occurred during ${functionName} execution of ${functionName} function:`,
+      );
+      console.error(error);
+      throw error;
+    }
   }
   /**
    * Deploys a contract with the given configuration.
@@ -197,63 +189,6 @@ export class ContractManager {
     }
   }
 
-
-
-  /**
-   * Executes a function on a deployed contract.
-   * @param contract Contract instance or contract address.
-   * @param functionName The name of the function to call on the contract.
-   * @param args The arguments for the function.
-   * @param bufferPercentage - Optional. The percentage buffer to add to the max fee (default is 20%).
-   * @returns A promise that resolves with the transaction receipt.
-   * @throws Will throw an error if the transaction fails.
-   */
-  async executeTransaction(
-    contract: Contract | string,
-    functionName: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    args: any[] = [],
-    bufferPercentage: number = 20,
-  ): Promise<string> {
-    let contractInstance: Contract;
-    // Determine if contract is an instance or an address
-    if (typeof contract === 'string') {
-      // It's a contract address, connect to the deployed contract
-      contractInstance = await this.connectToDeployedContract(contract);
-    } else {
-      contractInstance = contract;
-    }
-
-    // Estimate the fee for the function call
-    const maxFee = await this.estimateMaxFee(
-      contractInstance,
-      functionName,
-      args,
-      bufferPercentage,
-    );
-    try {
-      // Execute the contract function
-      // @ts-expect-error - TODO: Fix this
-      const txResponse = await contractInstance.functions[functionName](
-        ...args,
-        { maxFee },
-      );
-      // Wait for the transaction to be mined
-      const txReceipt = await this.provider.waitForTransaction(
-        txResponse.transaction_hash,
-      );
-      this.handleTxReceipt(txReceipt, functionName);
-
-      return txResponse.transaction_hash;
-    } catch (error) {
-      logError(
-        `An error occurred during ${functionName} execution of ${functionName} function:`,
-      );
-      console.error(error);
-      throw error;
-    }
-  }
-
   /**
    * Estimates the maximum fee required for a Starknet transaction.
    * @param contract - The Starknet contract instance.
@@ -262,16 +197,18 @@ export class ContractManager {
    * @param bufferPercentage - The percentage buffer to add to the suggested max fee.
    * @returns The multiplied suggested max fee.
    */
-  async estimateMaxFee(
+  async estimateMaxFee<
+    TAbi extends Abi,
+    TFunctionName extends ExtractFunctionNames<TAbi, 'external'>,
+    TArgs extends FunctionArgs<TAbi, TFunctionName>,
+  >(
     contract: Contract,
-    functionName: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    functionArgs: any[],
+    functionName: TFunctionName,
+    functionArgs: TArgs,
     bufferPercentage: number,
   ): Promise<bigint> {
-    // @ts-expect-error - TODO: Fix this
-    const feeEstimate = await contract.estimateFee[functionName](
-      ...functionArgs,
+    const feeEstimate = await contract.estimateFee[functionName]!(
+      functionArgs as Calldata,
     );
     const suggestedMaxFee = BigInt(feeEstimate.suggestedMaxFee);
     const maxFee =
@@ -327,7 +264,6 @@ export const initializeContractManager = (): ContractManager => {
 
   return new ContractManager(rpcEndpoint, privateKey, accountAddress);
 };
-
 
 const abi = [
   {
@@ -917,4 +853,3 @@ const abi = [
     ],
   },
 ] as const;
-
