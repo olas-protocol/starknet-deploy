@@ -6,26 +6,36 @@
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "starknet-deploy": "./dist/cli.js"
+  },
   "scripts": {
     "build": "tsup",
     "format": "prettier --write .",
     "lint": "eslint .",
-    "lint-fix": "eslint . --fix"
+    "lint-fix": "eslint . --fix",
+    "test": "jest",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",
+    "@jest/globals": "^29.7.0",
     "@types/eslint__js": "^8.42.3",
     "@types/node": "^22.9.0",
     "eslint": "^9.14.0",
+    "husky": "^9.1.7",
     "prettier": "3.3.3",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
     "tsup": "^8.3.5",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.13.0"
   },
   "dependencies": {
     "colors": "^1.4.0",
+    "commander": "^13.1.0",
     "dotenv": "^16.4.5",
-    "starknet": "^6.11.0",
+    "starknet": "6.23.1",
     "toml": "^3.0.0"
   }
 }

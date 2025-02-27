@@ -1,0 +1,9 @@
+# Format JS
+echo "Formatting JS files..."
+npm run format
+
+# Run JS tests
+echo "Running JS tests..."
+npm test
+
+git update-index --again

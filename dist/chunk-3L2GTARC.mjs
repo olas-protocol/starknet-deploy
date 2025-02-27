@@ -1,15 +1,33 @@
 #!/usr/bin/env node
-'use strict';
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
+var __require = /* @__PURE__ */ ((x) =>
+  typeof require !== 'undefined'
+    ? require
+    : typeof Proxy !== 'undefined'
+      ? new Proxy(x, {
+          get: (a, b) => (typeof require !== 'undefined' ? require : a)[b],
+        })
+      : x)(function (x) {
+  if (typeof require !== 'undefined') return require.apply(this, arguments);
+  throw Error('Dynamic require of "' + x + '" is not supported');
+});
+var __esm = (fn, res) =>
+  function __init() {
+    return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])((fn = 0))), res;
+  };
+var __commonJS = (cb, mod) =>
+  function __require2() {
+    return (
+      mod ||
+        (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod),
+      mod.exports
+    );
+  };
 var __copyProps = (to, from, except, desc) => {
   if ((from && typeof from === 'object') || typeof from === 'function') {
     for (let key of __getOwnPropNames(from))
@@ -34,71 +52,61 @@ var __toESM = (mod, isNodeMode, target) => (
     mod,
   )
 );
-var __toCommonJS = (mod) =>
-  __copyProps(__defProp({}, '__esModule', { value: true }), mod);
+
+// node_modules/tsup/assets/esm_shims.js
+import { fileURLToPath } from 'url';
+import path from 'path';
+var init_esm_shims = __esm({
+  'node_modules/tsup/assets/esm_shims.js'() {
+    'use strict';
+  },
+});
 
 // src/index.ts
-var src_exports = {};
-__export(src_exports, {
-  ContractManager: () => ContractManager,
-  createProjectStructure: () => createProjectStructure,
-  ensureDirectoryExists: () => ensureDirectoryExists,
-  ensureFileExists: () => ensureFileExists,
-  exampleDeploymentScript: () => exampleDeploymentScript,
-  exampleTaskContent: () => exampleTaskContent,
-  fetchContractAddress: () => fetchContractAddress,
-  getCompiledCode: () => getCompiledCode,
-  getPackageName: () => getPackageName,
-  initializeContractManager: () => initializeContractManager,
-  logDeploymentDetails: () => logDeploymentDetails,
-  logError: () => logError,
-  logInfo: () => logInfo,
-  logSuccess: () => logSuccess,
-  logWarn: () => logWarn,
-  saveContractAddress: () => saveContractAddress,
-});
-module.exports = __toCommonJS(src_exports);
+init_esm_shims();
 
 // src/ContractManager.ts
-var import_starknet = require('starknet');
+init_esm_shims();
+import {
+  Account,
+  RpcProvider,
+  CallData,
+  stark,
+  Contract,
+  ReceiptTx,
+} from 'starknet';
 
 // src/fileUtils.ts
-var import_fs = require('fs');
-var import_path = __toESM(require('path'));
-var import_toml = __toESM(require('toml'));
+init_esm_shims();
+import { promises as fs, existsSync } from 'fs';
+import path2 from 'path';
+import toml from 'toml';
 
 // src/logger.ts
-var import_colors = __toESM(require('colors'));
+init_esm_shims();
+import colors from 'colors';
 function formatLog(level, message) {
   return `
 [${level}] ${message}`;
 }
 function logInfo(message) {
-  console.log(
-    import_colors.default.blue(formatLog('INFO' /* INFO */, message)),
-  );
+  console.log(colors.blue(formatLog('INFO' /* INFO */, message)));
 }
 function logWarn(message) {
-  console.log(
-    import_colors.default.yellow(formatLog('WARN' /* WARN */, message)),
-  );
+  console.log(colors.yellow(formatLog('WARN' /* WARN */, message)));
 }
 function logError(message) {
-  console.error(
-    import_colors.default.red(formatLog('ERROR' /* ERROR */, message)),
-  );
+  console.error(colors.red(formatLog('ERROR' /* ERROR */, message)));
 }
 function logSuccess(message) {
-  console.log(
-    import_colors.default.green(formatLog('SUCCESS' /* SUCCESS */, message)),
-  );
+  console.log(colors.green(formatLog('SUCCESS' /* SUCCESS */, message)));
 }
 function logDeploymentDetails(contractName, classHash, contractAddress) {
   const deploymentMessage = `
-    ${import_colors.default.green(`${contractName} Contract deployed successfully`)}
-    ${import_colors.default.green(`Class Hash: ${classHash}`)}
-    ${import_colors.default.green(`Contract Address: ${contractAddress}`)}
-    ${import_colors.default.green(`Explorer URL: ${process.env.BLOCK_EXPLORER_URL}/contract/${contractAddress}`)}
+    ${colors.green(`${contractName} Contract deployed successfully`)}
+    ${colors.green(`Class Hash: ${classHash}`)}
+    ${colors.green(`Contract Address: ${contractAddress}`)}
+    ${colors.green(`Explorer URL: ${process.env.BLOCK_EXPLORER_URL}/contract/${contractAddress}`)}
     `;
   logSuccess(deploymentMessage);
 }
@@ -107,7 +115,7 @@ function logDeploymentDetails(contractName, classHash, contractAddress) {
 var projectRoot = process.cwd();
 async function ensureDirectoryExists(dirPath) {
   try {
-    await import_fs.promises.mkdir(dirPath, { recursive: true });
+    await fs.mkdir(dirPath, { recursive: true });
     logSuccess(`Created directory: ${dirPath}`);
   } catch (error) {
     logError(`Error creating directory ${dirPath}: ${error}`);
@@ -115,26 +123,23 @@ async function ensureDirectoryExists(dirPath) {
   }
 }
 async function ensureFileExists(filePath) {
-  if (!(0, import_fs.existsSync)(filePath)) {
+  if (!existsSync(filePath)) {
     console.log('File does not exist, creating a new one.');
-    await import_fs.promises.writeFile(filePath, JSON.stringify({}));
+    await fs.writeFile(filePath, JSON.stringify({}));
   }
 }
 async function saveContractAddress(contractName, contractAddress) {
-  const filePath = import_path.default.join(
+  const filePath = path2.join(
     projectRoot,
     'src/scripts/deployments',
     'deployed_contract_addresses.json',
   );
   try {
     await ensureFileExists(filePath);
-    const data = await import_fs.promises.readFile(filePath, 'utf8');
+    const data = await fs.readFile(filePath, 'utf8');
     const jsonData = data.trim() ? JSON.parse(data) : {};
     jsonData[contractName] = contractAddress;
-    await import_fs.promises.writeFile(
-      filePath,
-      JSON.stringify(jsonData, null, 2),
-    );
+    await fs.writeFile(filePath, JSON.stringify(jsonData, null, 2));
     logSuccess(`Contract address saved to ${filePath}`);
   } catch (error) {
     logError(`Error saving contract address: ${error}`);
@@ -142,13 +147,13 @@ async function saveContractAddress(contractName, contractAddress) {
   }
 }
 async function fetchContractAddress(contractName) {
-  const filePath = import_path.default.join(
+  const filePath = path2.join(
     projectRoot,
     'src/scripts/deployments',
     'deployed_contract_addresses.json',
   );
   try {
-    const data = await import_fs.promises.readFile(filePath, 'utf8');
+    const data = await fs.readFile(filePath, 'utf8');
     const jsonData = JSON.parse(data);
     return jsonData[contractName];
   } catch (error) {
@@ -157,10 +162,10 @@ async function fetchContractAddress(contractName) {
   }
 }
 async function getPackageName() {
-  const tomlPath = import_path.default.join(projectRoot, 'Scarb.toml');
+  const tomlPath = path2.join(projectRoot, 'Scarb.toml');
   try {
-    const tomlData = await import_fs.promises.readFile(tomlPath, 'utf8');
-    const parsedToml = import_toml.default.parse(tomlData);
+    const tomlData = await fs.readFile(tomlPath, 'utf8');
+    const parsedToml = toml.parse(tomlData);
     return parsedToml.package.name;
   } catch (error) {
     logError(`Error reading Scarb.toml:, ${error}`);
@@ -169,18 +174,18 @@ async function getPackageName() {
 }
 async function getCompiledCode(contractName) {
   const packageName = await getPackageName();
-  const sierraFilePath = import_path.default.join(
+  const sierraFilePath = path2.join(
     projectRoot,
     'target/dev',
     `${packageName}_${contractName}.contract_class.json`,
   );
-  const casmFilePath = import_path.default.join(
+  const casmFilePath = path2.join(
     projectRoot,
     'target/dev',
     `${packageName}_${contractName}.compiled_contract_class.json`,
   );
   const code = [sierraFilePath, casmFilePath].map(async (filePath) => {
-    const file = await import_fs.promises.readFile(filePath);
+    const file = await fs.readFile(filePath);
     return JSON.parse(file.toString('ascii'));
   });
   const [sierraCode, casmCode] = await Promise.all(code);
@@ -194,39 +199,27 @@ async function createProjectStructure() {
     console.log('fetching package name');
     const packageName = await getPackageName();
     console.log('Package name:', packageName);
-    const scriptsDir = import_path.default.join(process.cwd(), 'src/scripts');
+    const scriptsDir = path2.join(process.cwd(), 'src/scripts');
     console.log(LOGO);
     logInfo(`Initializing project structure for ${packageName}...`);
-    await ensureDirectoryExists(
-      import_path.default.join(scriptsDir, 'deployments'),
-    );
-    await ensureDirectoryExists(import_path.default.join(scriptsDir, 'tasks'));
+    await ensureDirectoryExists(path2.join(scriptsDir, 'deployments'));
+    await ensureDirectoryExists(path2.join(scriptsDir, 'tasks'));
     console.log('Creating example task file');
-    const exampleTaskPath = import_path.default.join(
-      scriptsDir,
-      'tasks',
-      'example_task.ts',
-    );
+    const exampleTaskPath = path2.join(scriptsDir, 'tasks', 'example_task.ts');
     console.log('Example task path:', exampleTaskPath);
-    await import_fs.promises.writeFile(exampleTaskPath, exampleTaskContent);
-    const exampleDeploymentPath = import_path.default.join(
+    await fs.writeFile(exampleTaskPath, exampleTaskContent);
+    const exampleDeploymentPath = path2.join(
       scriptsDir,
       'deployments',
       'example_deployment.ts',
     );
-    await import_fs.promises.writeFile(
-      exampleDeploymentPath,
-      exampleDeploymentScript,
-    );
-    const addressesPath = import_path.default.join(
+    await fs.writeFile(exampleDeploymentPath, exampleDeploymentScript);
+    const addressesPath = path2.join(
       scriptsDir,
       'deployments',
       'deployed_contract_addresses.json',
     );
-    await import_fs.promises.writeFile(
-      addressesPath,
-      JSON.stringify({}, null, 2),
-    );
+    await fs.writeFile(addressesPath, JSON.stringify({}, null, 2));
     logSuccess(
       '\nStarknet Deploy Project structure created successfully! \u{1F680}',
     );
@@ -293,6 +286,7 @@ var LOGO = `
 `;
 
 // src/common.ts
+init_esm_shims();
 function getExplorerUrl(txHash) {
   return process.env.BLOCK_EXPLORER_URL
     ? `${process.env.BLOCK_EXPLORER_URL}/tx/${txHash}`
@@ -315,12 +309,8 @@ var ContractManager = class {
   provider;
   account;
   constructor(rpcEndpoint, privateKey, accountAddress) {
-    this.provider = new import_starknet.RpcProvider({ nodeUrl: rpcEndpoint });
-    this.account = new import_starknet.Account(
-      this.provider,
-      accountAddress,
-      privateKey,
-    );
+    this.provider = new RpcProvider({ nodeUrl: rpcEndpoint });
+    this.account = new Account(this.provider, accountAddress, privateKey);
   }
   /**
    * Deploys a contract with the given configuration.
@@ -339,14 +329,14 @@ var ContractManager = class {
       const { sierraCode, casmCode } = await getCompiledCode(contractName);
       let constructorCalldata;
       if (constructorArgs) {
-        const callData = new import_starknet.CallData(sierraCode.abi);
+        const callData = new CallData(sierraCode.abi);
         constructorCalldata = callData.compile('constructor', constructorArgs);
       }
       const deployResponse = await this.account.declareAndDeploy({
         contract: sierraCode,
         casm: casmCode,
         constructorCalldata,
-        salt: import_starknet.stark.randomAddress(),
+        salt: stark.randomAddress(),
       });
       logDeploymentDetails(
         contractName,
@@ -373,11 +363,7 @@ var ContractManager = class {
     }
     const { sierraCode } = await getCompiledCode(contractName);
     const contract_abi = sierraCode.abi;
-    const contract = new import_starknet.Contract(
-      contract_abi,
-      contractAddress,
-      this.provider,
-    );
+    const contract = new Contract(contract_abi, contractAddress, this.provider);
     contract.connect(this.account);
     logSuccess(
       `Connected to ${contractName} contract with address ${this.account.address}`,
@@ -398,7 +384,7 @@ var ContractManager = class {
           `No ABI found for contract at address ${contractAddress}`,
         );
       }
-      const contract = new import_starknet.Contract(
+      const contract = new Contract(
         contractAbi,
         contractAddress,
         this.provider,
@@ -477,7 +463,7 @@ var ContractManager = class {
   }
   // Helper function to handle transaction receipt
   async handleTxReceipt(receipt, operationName) {
-    const receiptTx = new import_starknet.ReceiptTx(receipt);
+    const receiptTx = new ReceiptTx(receipt);
     receiptTx.match({
       success: (successReceipt) => {
         logSuccess(
@@ -509,23 +495,26 @@ var initializeContractManager = () => {
   }
   return new ContractManager(rpcEndpoint, privateKey, accountAddress);
 };
-// Annotate the CommonJS export names for ESM import in node:
-0 &&
-  (module.exports = {
-    ContractManager,
-    createProjectStructure,
-    ensureDirectoryExists,
-    ensureFileExists,
-    exampleDeploymentScript,
-    exampleTaskContent,
-    fetchContractAddress,
-    getCompiledCode,
-    getPackageName,
-    initializeContractManager,
-    logDeploymentDetails,
-    logError,
-    logInfo,
-    logSuccess,
-    logWarn,
-    saveContractAddress,
-  });
+
+export {
+  __require,
+  __commonJS,
+  __toESM,
+  init_esm_shims,
+  logInfo,
+  logWarn,
+  logError,
+  logSuccess,
+  logDeploymentDetails,
+  ensureDirectoryExists,
+  ensureFileExists,
+  saveContractAddress,
+  fetchContractAddress,
+  getPackageName,
+  getCompiledCode,
+  createProjectStructure,
+  exampleDeploymentScript,
+  exampleTaskContent,
+  ContractManager,
+  initializeContractManager,
+};
