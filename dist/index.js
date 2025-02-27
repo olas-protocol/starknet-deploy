@@ -568,7 +568,7 @@ var initializeContractManager = () => {
   }
   const rpcEndpoint = networkConfig.rpcUrl;
   const privateKey = networkConfig.accounts[0];
-  const accountAddress = networkConfig.accountAddress;
+  const accountAddress = networkConfig.addresses[0];
   if (!rpcEndpoint || !privateKey || !accountAddress) {
     throw new Error('Missing required network configuration values');
   }
