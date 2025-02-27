@@ -2,6 +2,7 @@
 import {
   ContractManager,
   createProjectStructure,
+  defaultConfigContent,
   ensureDirectoryExists,
   ensureFileExists,
   exampleDeploymentScript,
@@ -16,10 +17,11 @@ import {
   logSuccess,
   logWarn,
   saveContractAddress,
-} from './chunk-3L2GTARC.mjs';
+} from './chunk-6NTGCRQB.mjs';
 export {
   ContractManager,
   createProjectStructure,
+  defaultConfigContent,
   ensureDirectoryExists,
   ensureFileExists,
   exampleDeploymentScript,

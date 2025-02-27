@@ -1238,7 +1238,7 @@ var require_command = __commonJS({
     init_cjs_shims();
     var EventEmitter = require('events').EventEmitter;
     var childProcess = require('child_process');
-    var path2 = require('path');
+    var path3 = require('path');
     var fs2 = require('fs');
     var process2 = require('process');
     var { Argument: Argument2, humanReadableArgName } = require_argument();
@@ -1871,14 +1871,14 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @return {Command} `this` command for chaining
        * @private
        */
-      _optionEx(config, flags, description, fn, defaultValue) {
+      _optionEx(config2, flags, description, fn, defaultValue) {
         if (typeof flags === 'object' && flags instanceof Option2) {
           throw new Error(
             'To add an Option object use addOption() instead of option() or requiredOption()',
           );
         }
         const option = this.createOption(flags, description);
-        option.makeOptionMandatory(!!config.mandatory);
+        option.makeOptionMandatory(!!config2.mandatory);
         if (typeof fn === 'function') {
           option.default(defaultValue).argParser(fn);
         } else if (fn instanceof RegExp) {
@@ -2288,9 +2288,9 @@ Expecting one of '${allowedValues.join("', '")}'`);
         let launchWithNode = false;
         const sourceExt = ['.js', '.ts', '.tsx', '.mjs', '.cjs'];
         function findFile(baseDir, baseName) {
-          const localBin = path2.resolve(baseDir, baseName);
+          const localBin = path3.resolve(baseDir, baseName);
           if (fs2.existsSync(localBin)) return localBin;
-          if (sourceExt.includes(path2.extname(baseName))) return void 0;
+          if (sourceExt.includes(path3.extname(baseName))) return void 0;
           const foundExt = sourceExt.find((ext) =>
             fs2.existsSync(`${localBin}${ext}`),
           );
@@ -2309,17 +2309,17 @@ Expecting one of '${allowedValues.join("', '")}'`);
           } catch {
             resolvedScriptPath = this._scriptPath;
           }
-          executableDir = path2.resolve(
-            path2.dirname(resolvedScriptPath),
+          executableDir = path3.resolve(
+            path3.dirname(resolvedScriptPath),
             executableDir,
           );
         }
         if (executableDir) {
           let localFile = findFile(executableDir, executableFile);
           if (!localFile && !subcommand._executableFile && this._scriptPath) {
-            const legacyName = path2.basename(
+            const legacyName = path3.basename(
               this._scriptPath,
-              path2.extname(this._scriptPath),
+              path3.extname(this._scriptPath),
             );
             if (legacyName !== this._name) {
               localFile = findFile(
@@ -2330,7 +2330,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
           }
           executableFile = localFile || executableFile;
         }
-        launchWithNode = sourceExt.includes(path2.extname(executableFile));
+        launchWithNode = sourceExt.includes(path3.extname(executableFile));
         let proc;
         if (process2.platform !== 'win32') {
           if (launchWithNode) {
@@ -2909,9 +2909,9 @@ Expecting one of '${allowedValues.join("', '")}'`);
           this._outputConfiguration.writeErr('\n');
           this.outputHelp({ error: true });
         }
-        const config = errorOptions || {};
-        const exitCode = config.exitCode || 1;
-        const code = config.code || 'commander.error';
+        const config2 = errorOptions || {};
+        const exitCode = config2.exitCode || 1;
+        const code = config2.code || 'commander.error';
         this._exit(exitCode, code, message);
       }
       /**
@@ -3256,7 +3256,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @return {Command}
        */
       nameFromFilename(filename) {
-        this._name = path2.basename(filename, path2.extname(filename));
+        this._name = path3.basename(filename, path3.extname(filename));
         return this;
       }
       /**
@@ -3270,9 +3270,9 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @param {string} [path]
        * @return {(string|null|Command)}
        */
-      executableDir(path3) {
-        if (path3 === void 0) return this._executableDir;
-        this._executableDir = path3;
+      executableDir(path4) {
+        if (path4 === void 0) return this._executableDir;
+        this._executableDir = path4;
         return this;
       }
       /**
@@ -3605,13 +3605,32 @@ var import_starknet = require('starknet');
 
 // src/fileUtils.ts
 init_cjs_shims();
-var import_fs = require('fs');
-var import_path = __toESM(require('path'));
+var import_fs2 = require('fs');
+var import_path2 = __toESM(require('path'));
 var import_toml = __toESM(require('toml'));
 
 // src/logger.ts
 init_cjs_shims();
 var import_colors = __toESM(require('colors'));
+
+// src/config.ts
+init_cjs_shims();
+var import_path = __toESM(require('path'));
+var import_fs = require('fs');
+var configPath = import_path.default.join(
+  process.cwd(),
+  'starknet-deploy.config.js',
+);
+if (!(0, import_fs.existsSync)(configPath)) {
+  throw new Error(
+    'Configuration file(starknet-deploy.config.js) not found. Please run `starknet-deploy init` to create one.',
+  );
+}
+var config = require(configPath);
+var config_default = config;
+
+// src/logger.ts
+var explorerURL = `https://${config_default.defaultNetwork}.starkscan.co/`;
 function formatLog(level, message) {
   return `
 [${level}] ${message}`;
@@ -3634,9 +3653,13 @@ function logSuccess(message) {
 
 // src/fileUtils.ts
 var projectRoot = process.cwd();
+var scriptsDir = config_default.paths.scripts || 'src/scripts';
+var deploymentsDir = `${scriptsDir}/deployments`;
+var tasksDir = `${scriptsDir}/tasks`;
+var contractClassesDir = config_default.paths.contractClasses || 'target/dev';
 async function ensureDirectoryExists(dirPath) {
   try {
-    await import_fs.promises.mkdir(dirPath, { recursive: true });
+    await import_fs2.promises.mkdir(dirPath, { recursive: true });
     logSuccess(`Created directory: ${dirPath}`);
   } catch (error) {
     logError(`Error creating directory ${dirPath}: ${error}`);
@@ -3644,9 +3667,9 @@ async function ensureDirectoryExists(dirPath) {
   }
 }
 async function getPackageName() {
-  const tomlPath = import_path.default.join(projectRoot, 'Scarb.toml');
+  const tomlPath = import_path2.default.join(projectRoot, 'Scarb.toml');
   try {
-    const tomlData = await import_fs.promises.readFile(tomlPath, 'utf8');
+    const tomlData = await import_fs2.promises.readFile(tomlPath, 'utf8');
     const parsedToml = import_toml.default.parse(tomlData);
     return parsedToml.package.name;
   } catch (error) {
@@ -3659,36 +3682,37 @@ async function createProjectStructure() {
     console.log('fetching package name');
     const packageName = await getPackageName();
     console.log('Package name:', packageName);
-    const scriptsDir = import_path.default.join(process.cwd(), 'src/scripts');
     console.log(LOGO);
     logInfo(`Initializing project structure for ${packageName}...`);
     await ensureDirectoryExists(
-      import_path.default.join(scriptsDir, 'deployments'),
+      import_path2.default.join(projectRoot, deploymentsDir),
     );
-    await ensureDirectoryExists(import_path.default.join(scriptsDir, 'tasks'));
+    await ensureDirectoryExists(
+      import_path2.default.join(projectRoot, tasksDir),
+    );
     console.log('Creating example task file');
-    const exampleTaskPath = import_path.default.join(
-      scriptsDir,
-      'tasks',
+    const exampleTaskPath = import_path2.default.join(
+      projectRoot,
+      tasksDir,
       'example_task.ts',
     );
     console.log('Example task path:', exampleTaskPath);
-    await import_fs.promises.writeFile(exampleTaskPath, exampleTaskContent);
-    const exampleDeploymentPath = import_path.default.join(
-      scriptsDir,
-      'deployments',
+    await import_fs2.promises.writeFile(exampleTaskPath, exampleTaskContent);
+    const exampleDeploymentPath = import_path2.default.join(
+      projectRoot,
+      deploymentsDir,
       'example_deployment.ts',
     );
-    await import_fs.promises.writeFile(
+    await import_fs2.promises.writeFile(
       exampleDeploymentPath,
       exampleDeploymentScript,
     );
-    const addressesPath = import_path.default.join(
-      scriptsDir,
-      'deployments',
+    const addressesPath = import_path2.default.join(
+      projectRoot,
+      deploymentsDir,
       'deployed_contract_addresses.json',
     );
-    await import_fs.promises.writeFile(
+    await import_fs2.promises.writeFile(
       addressesPath,
       JSON.stringify({}, null, 2),
     );
@@ -3697,8 +3721,8 @@ async function createProjectStructure() {
     );
     logInfo(`
 Next steps:
-  1. Add your scripts in src/scripts/tasks
-  2. Store your deployment artifacts in src/scripts/deployments`);
+  1. Add your scripts in ${tasksDir}
+  2. Store your deployment artifacts in ${deploymentsDir}`);
   } catch (error) {
     logError(`Failed to create project structure: ${error}`);
     process.exit(1);

@@ -78,13 +78,29 @@ import {
 
 // src/fileUtils.ts
 init_esm_shims();
-import { promises as fs, existsSync } from 'fs';
-import path2 from 'path';
+import { promises as fs, existsSync as existsSync2 } from 'fs';
+import path3 from 'path';
 import toml from 'toml';
 
 // src/logger.ts
 init_esm_shims();
 import colors from 'colors';
+
+// src/config.ts
+init_esm_shims();
+import path2 from 'path';
+import { existsSync } from 'fs';
+var configPath = path2.join(process.cwd(), 'starknet-deploy.config.js');
+if (!existsSync(configPath)) {
+  throw new Error(
+    'Configuration file(starknet-deploy.config.js) not found. Please run `starknet-deploy init` to create one.',
+  );
+}
+var config = __require(configPath);
+var config_default = config;
+
+// src/logger.ts
+var explorerURL = `https://${config_default.defaultNetwork}.starkscan.co/`;
 function formatLog(level, message) {
   return `
 [${level}] ${message}`;
@@ -106,13 +122,17 @@ function logDeploymentDetails(contractName, classHash, contractAddress) {
     ${colors.green(`${contractName} Contract deployed successfully`)}
     ${colors.green(`Class Hash: ${classHash}`)}
     ${colors.green(`Contract Address: ${contractAddress}`)}
-    ${colors.green(`Explorer URL: ${process.env.BLOCK_EXPLORER_URL}/contract/${contractAddress}`)}
+    ${colors.green(`Explorer URL: ${explorerURL}/contract/${contractAddress}`)}
     `;
   logSuccess(deploymentMessage);
 }
 
 // src/fileUtils.ts
 var projectRoot = process.cwd();
+var scriptsDir = config_default.paths.scripts || 'src/scripts';
+var deploymentsDir = `${scriptsDir}/deployments`;
+var tasksDir = `${scriptsDir}/tasks`;
+var contractClassesDir = config_default.paths.contractClasses || 'target/dev';
 async function ensureDirectoryExists(dirPath) {
   try {
     await fs.mkdir(dirPath, { recursive: true });
@@ -123,15 +143,15 @@ async function ensureDirectoryExists(dirPath) {
   }
 }
 async function ensureFileExists(filePath) {
-  if (!existsSync(filePath)) {
+  if (!existsSync2(filePath)) {
     console.log('File does not exist, creating a new one.');
     await fs.writeFile(filePath, JSON.stringify({}));
   }
 }
 async function saveContractAddress(contractName, contractAddress) {
-  const filePath = path2.join(
+  const filePath = path3.join(
     projectRoot,
-    'src/scripts/deployments',
+    deploymentsDir,
     'deployed_contract_addresses.json',
   );
   try {
@@ -147,9 +167,9 @@ async function saveContractAddress(contractName, contractAddress) {
   }
 }
 async function fetchContractAddress(contractName) {
-  const filePath = path2.join(
+  const filePath = path3.join(
     projectRoot,
-    'src/scripts/deployments',
+    deploymentsDir,
     'deployed_contract_addresses.json',
   );
   try {
@@ -162,7 +182,7 @@ async function fetchContractAddress(contractName) {
   }
 }
 async function getPackageName() {
-  const tomlPath = path2.join(projectRoot, 'Scarb.toml');
+  const tomlPath = path3.join(projectRoot, 'Scarb.toml');
   try {
     const tomlData = await fs.readFile(tomlPath, 'utf8');
     const parsedToml = toml.parse(tomlData);
@@ -174,14 +194,14 @@ async function getPackageName() {
 }
 async function getCompiledCode(contractName) {
   const packageName = await getPackageName();
-  const sierraFilePath = path2.join(
+  const sierraFilePath = path3.join(
     projectRoot,
-    'target/dev',
+    contractClassesDir,
     `${packageName}_${contractName}.contract_class.json`,
   );
-  const casmFilePath = path2.join(
+  const casmFilePath = path3.join(
     projectRoot,
-    'target/dev',
+    contractClassesDir,
     `${packageName}_${contractName}.compiled_contract_class.json`,
   );
   const code = [sierraFilePath, casmFilePath].map(async (filePath) => {
@@ -199,24 +219,27 @@ async function createProjectStructure() {
     console.log('fetching package name');
     const packageName = await getPackageName();
     console.log('Package name:', packageName);
-    const scriptsDir = path2.join(process.cwd(), 'src/scripts');
     console.log(LOGO);
     logInfo(`Initializing project structure for ${packageName}...`);
-    await ensureDirectoryExists(path2.join(scriptsDir, 'deployments'));
-    await ensureDirectoryExists(path2.join(scriptsDir, 'tasks'));
+    await ensureDirectoryExists(path3.join(projectRoot, deploymentsDir));
+    await ensureDirectoryExists(path3.join(projectRoot, tasksDir));
     console.log('Creating example task file');
-    const exampleTaskPath = path2.join(scriptsDir, 'tasks', 'example_task.ts');
+    const exampleTaskPath = path3.join(
+      projectRoot,
+      tasksDir,
+      'example_task.ts',
+    );
     console.log('Example task path:', exampleTaskPath);
     await fs.writeFile(exampleTaskPath, exampleTaskContent);
-    const exampleDeploymentPath = path2.join(
-      scriptsDir,
-      'deployments',
+    const exampleDeploymentPath = path3.join(
+      projectRoot,
+      deploymentsDir,
       'example_deployment.ts',
     );
     await fs.writeFile(exampleDeploymentPath, exampleDeploymentScript);
-    const addressesPath = path2.join(
-      scriptsDir,
-      'deployments',
+    const addressesPath = path3.join(
+      projectRoot,
+      deploymentsDir,
       'deployed_contract_addresses.json',
     );
     await fs.writeFile(addressesPath, JSON.stringify({}, null, 2));
@@ -225,8 +248,8 @@ async function createProjectStructure() {
     );
     logInfo(`
 Next steps:
-  1. Add your scripts in src/scripts/tasks
-  2. Store your deployment artifacts in src/scripts/deployments`);
+  1. Add your scripts in ${tasksDir}
+  2. Store your deployment artifacts in ${deploymentsDir}`);
   } catch (error) {
     logError(`Failed to create project structure: ${error}`);
     process.exit(1);
@@ -284,6 +307,20 @@ var LOGO = `
 \u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2551     \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D   \u2588\u2588\u2551                     
 \u255A\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u255D     \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u255D    \u255A\u2550\u255D                                       
 `;
+var defaultConfigContent = `module.exports = {
+  defaultNetwork: 'sepolia',
+  sepolia: {
+    rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
+    accounts: ['<privateKey1>'],
+    addresses: ['<address1>'],
+  },
+  paths: {
+    contractClasses: 'target/dev',
+    deploymentScripts: 'src/scripts/deployments',
+    taskScripts: 'src/scripts/tasks'
+  },
+};
+`;
 
 // src/common.ts
 init_esm_shims();
@@ -313,6 +350,23 @@ var ContractManager = class {
     this.account = new Account(this.provider, accountAddress, privateKey);
   }
   /**
+   * Updates the account used for contract deployment and interaction.
+   * @param accountIndex The index of the account in the configuration.
+   */
+  updateAccount(accountIndex) {
+    const currentNetwork = config_default.defaultNetwork;
+    const networkConfig = config_default[currentNetwork];
+    if (accountIndex < 0 || accountIndex >= networkConfig.accounts.length) {
+      throw new Error(`Invalid account index provided: ${accountIndex}`);
+    }
+    const privateKey = networkConfig.accounts[accountIndex];
+    const accountAddress = networkConfig.addresses[accountIndex];
+    this.account = new Account(this.provider, accountAddress, privateKey);
+    logInfo(
+      `Switched to account index ${accountIndex}. New account address: ${accountAddress}`,
+    );
+  }
+  /**
    * Deploys a contract with the given configuration.
    *
    * @param contractName The name of the contract to be deployed
@@ -320,8 +374,8 @@ var ContractManager = class {
    * @returns A promise that resolves when the deployment is complete.
    * @throws Will throw an error if the deployment fails.
    */
-  async deployContract(config) {
-    const { contractName, constructorArgs } = config;
+  async deployContract(config2) {
+    const { contractName, constructorArgs } = config2;
     logInfo(
       `Deploying contract: ${contractName}, with initial args: ${JSON.stringify(constructorArgs, replacer, 2)}`,
     );
@@ -487,11 +541,17 @@ Explorer URL: ${getExplorerUrl(successReceipt.transaction_hash)}`,
   }
 };
 var initializeContractManager = () => {
-  const rpcEndpoint = process.env.RPC_ENDPOINT;
-  const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
-  const accountAddress = process.env.DEPLOYER_ADDRESS;
+  const currentNetwork = config_default.defaultNetwork;
+  const networkConfig = config_default[currentNetwork];
+  if (!networkConfig) {
+    logError(`No configuration found for network: ${currentNetwork}`);
+    throw new Error();
+  }
+  const rpcEndpoint = networkConfig.rpcUrl;
+  const privateKey = networkConfig.accounts[0];
+  const accountAddress = networkConfig.accountAddress;
   if (!rpcEndpoint || !privateKey || !accountAddress) {
-    throw new Error('Missing required environment variables');
+    throw new Error('Missing required network configuration values');
   }
   return new ContractManager(rpcEndpoint, privateKey, accountAddress);
 };
@@ -515,6 +575,7 @@ export {
   createProjectStructure,
   exampleDeploymentScript,
   exampleTaskContent,
+  defaultConfigContent,
   ContractManager,
   initializeContractManager,
 };

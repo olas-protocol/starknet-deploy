@@ -42,6 +42,7 @@ var src_exports = {};
 __export(src_exports, {
   ContractManager: () => ContractManager,
   createProjectStructure: () => createProjectStructure,
+  defaultConfigContent: () => defaultConfigContent,
   ensureDirectoryExists: () => ensureDirectoryExists,
   ensureFileExists: () => ensureFileExists,
   exampleDeploymentScript: () => exampleDeploymentScript,
@@ -63,12 +64,30 @@ module.exports = __toCommonJS(src_exports);
 var import_starknet = require('starknet');
 
 // src/fileUtils.ts
-var import_fs = require('fs');
-var import_path = __toESM(require('path'));
+var import_fs2 = require('fs');
+var import_path2 = __toESM(require('path'));
 var import_toml = __toESM(require('toml'));
 
 // src/logger.ts
 var import_colors = __toESM(require('colors'));
+
+// src/config.ts
+var import_path = __toESM(require('path'));
+var import_fs = require('fs');
+var configPath = import_path.default.join(
+  process.cwd(),
+  'starknet-deploy.config.js',
+);
+if (!(0, import_fs.existsSync)(configPath)) {
+  throw new Error(
+    'Configuration file(starknet-deploy.config.js) not found. Please run `starknet-deploy init` to create one.',
+  );
+}
+var config = require(configPath);
+var config_default = config;
+
+// src/logger.ts
+var explorerURL = `https://${config_default.defaultNetwork}.starkscan.co/`;
 function formatLog(level, message) {
   return `
 [${level}] ${message}`;
@@ -98,16 +117,20 @@ function logDeploymentDetails(contractName, classHash, contractAddress) {
     ${import_colors.default.green(`${contractName} Contract deployed successfully`)}
     ${import_colors.default.green(`Class Hash: ${classHash}`)}
     ${import_colors.default.green(`Contract Address: ${contractAddress}`)}
-    ${import_colors.default.green(`Explorer URL: ${process.env.BLOCK_EXPLORER_URL}/contract/${contractAddress}`)}
+    ${import_colors.default.green(`Explorer URL: ${explorerURL}/contract/${contractAddress}`)}
     `;
   logSuccess(deploymentMessage);
 }
 
 // src/fileUtils.ts
 var projectRoot = process.cwd();
+var scriptsDir = config_default.paths.scripts || 'src/scripts';
+var deploymentsDir = `${scriptsDir}/deployments`;
+var tasksDir = `${scriptsDir}/tasks`;
+var contractClassesDir = config_default.paths.contractClasses || 'target/dev';
 async function ensureDirectoryExists(dirPath) {
   try {
-    await import_fs.promises.mkdir(dirPath, { recursive: true });
+    await import_fs2.promises.mkdir(dirPath, { recursive: true });
     logSuccess(`Created directory: ${dirPath}`);
   } catch (error) {
     logError(`Error creating directory ${dirPath}: ${error}`);
@@ -115,23 +138,23 @@ async function ensureDirectoryExists(dirPath) {
   }
 }
 async function ensureFileExists(filePath) {
-  if (!(0, import_fs.existsSync)(filePath)) {
+  if (!(0, import_fs2.existsSync)(filePath)) {
     console.log('File does not exist, creating a new one.');
-    await import_fs.promises.writeFile(filePath, JSON.stringify({}));
+    await import_fs2.promises.writeFile(filePath, JSON.stringify({}));
   }
 }
 async function saveContractAddress(contractName, contractAddress) {
-  const filePath = import_path.default.join(
+  const filePath = import_path2.default.join(
     projectRoot,
-    'src/scripts/deployments',
+    deploymentsDir,
     'deployed_contract_addresses.json',
   );
   try {
     await ensureFileExists(filePath);
-    const data = await import_fs.promises.readFile(filePath, 'utf8');
+    const data = await import_fs2.promises.readFile(filePath, 'utf8');
     const jsonData = data.trim() ? JSON.parse(data) : {};
     jsonData[contractName] = contractAddress;
-    await import_fs.promises.writeFile(
+    await import_fs2.promises.writeFile(
       filePath,
       JSON.stringify(jsonData, null, 2),
     );
@@ -142,13 +165,13 @@ async function saveContractAddress(contractName, contractAddress) {
   }
 }
 async function fetchContractAddress(contractName) {
-  const filePath = import_path.default.join(
+  const filePath = import_path2.default.join(
     projectRoot,
-    'src/scripts/deployments',
+    deploymentsDir,
     'deployed_contract_addresses.json',
   );
   try {
-    const data = await import_fs.promises.readFile(filePath, 'utf8');
+    const data = await import_fs2.promises.readFile(filePath, 'utf8');
     const jsonData = JSON.parse(data);
     return jsonData[contractName];
   } catch (error) {
@@ -157,9 +180,9 @@ async function fetchContractAddress(contractName) {
   }
 }
 async function getPackageName() {
-  const tomlPath = import_path.default.join(projectRoot, 'Scarb.toml');
+  const tomlPath = import_path2.default.join(projectRoot, 'Scarb.toml');
   try {
-    const tomlData = await import_fs.promises.readFile(tomlPath, 'utf8');
+    const tomlData = await import_fs2.promises.readFile(tomlPath, 'utf8');
     const parsedToml = import_toml.default.parse(tomlData);
     return parsedToml.package.name;
   } catch (error) {
@@ -169,18 +192,18 @@ async function getPackageName() {
 }
 async function getCompiledCode(contractName) {
   const packageName = await getPackageName();
-  const sierraFilePath = import_path.default.join(
+  const sierraFilePath = import_path2.default.join(
     projectRoot,
-    'target/dev',
+    contractClassesDir,
     `${packageName}_${contractName}.contract_class.json`,
   );
-  const casmFilePath = import_path.default.join(
+  const casmFilePath = import_path2.default.join(
     projectRoot,
-    'target/dev',
+    contractClassesDir,
     `${packageName}_${contractName}.compiled_contract_class.json`,
   );
   const code = [sierraFilePath, casmFilePath].map(async (filePath) => {
-    const file = await import_fs.promises.readFile(filePath);
+    const file = await import_fs2.promises.readFile(filePath);
     return JSON.parse(file.toString('ascii'));
   });
   const [sierraCode, casmCode] = await Promise.all(code);
@@ -194,36 +217,37 @@ async function createProjectStructure() {
     console.log('fetching package name');
     const packageName = await getPackageName();
     console.log('Package name:', packageName);
-    const scriptsDir = import_path.default.join(process.cwd(), 'src/scripts');
     console.log(LOGO);
     logInfo(`Initializing project structure for ${packageName}...`);
     await ensureDirectoryExists(
-      import_path.default.join(scriptsDir, 'deployments'),
+      import_path2.default.join(projectRoot, deploymentsDir),
     );
-    await ensureDirectoryExists(import_path.default.join(scriptsDir, 'tasks'));
+    await ensureDirectoryExists(
+      import_path2.default.join(projectRoot, tasksDir),
+    );
     console.log('Creating example task file');
-    const exampleTaskPath = import_path.default.join(
-      scriptsDir,
-      'tasks',
+    const exampleTaskPath = import_path2.default.join(
+      projectRoot,
+      tasksDir,
       'example_task.ts',
     );
     console.log('Example task path:', exampleTaskPath);
-    await import_fs.promises.writeFile(exampleTaskPath, exampleTaskContent);
-    const exampleDeploymentPath = import_path.default.join(
-      scriptsDir,
-      'deployments',
+    await import_fs2.promises.writeFile(exampleTaskPath, exampleTaskContent);
+    const exampleDeploymentPath = import_path2.default.join(
+      projectRoot,
+      deploymentsDir,
       'example_deployment.ts',
     );
-    await import_fs.promises.writeFile(
+    await import_fs2.promises.writeFile(
       exampleDeploymentPath,
       exampleDeploymentScript,
     );
-    const addressesPath = import_path.default.join(
-      scriptsDir,
-      'deployments',
+    const addressesPath = import_path2.default.join(
+      projectRoot,
+      deploymentsDir,
       'deployed_contract_addresses.json',
     );
-    await import_fs.promises.writeFile(
+    await import_fs2.promises.writeFile(
       addressesPath,
       JSON.stringify({}, null, 2),
     );
@@ -232,8 +256,8 @@ async function createProjectStructure() {
     );
     logInfo(`
 Next steps:
-  1. Add your scripts in src/scripts/tasks
-  2. Store your deployment artifacts in src/scripts/deployments`);
+  1. Add your scripts in ${tasksDir}
+  2. Store your deployment artifacts in ${deploymentsDir}`);
   } catch (error) {
     logError(`Failed to create project structure: ${error}`);
     process.exit(1);
@@ -291,6 +315,20 @@ var LOGO = `
 \u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2551     \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D   \u2588\u2588\u2551                     
 \u255A\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u255D     \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u255D    \u255A\u2550\u255D                                       
 `;
+var defaultConfigContent = `module.exports = {
+  defaultNetwork: 'sepolia',
+  sepolia: {
+    rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
+    accounts: ['<privateKey1>'],
+    addresses: ['<address1>'],
+  },
+  paths: {
+    contractClasses: 'target/dev',
+    deploymentScripts: 'src/scripts/deployments',
+    taskScripts: 'src/scripts/tasks'
+  },
+};
+`;
 
 // src/common.ts
 function getExplorerUrl(txHash) {
@@ -323,6 +361,27 @@ var ContractManager = class {
     );
   }
   /**
+   * Updates the account used for contract deployment and interaction.
+   * @param accountIndex The index of the account in the configuration.
+   */
+  updateAccount(accountIndex) {
+    const currentNetwork = config_default.defaultNetwork;
+    const networkConfig = config_default[currentNetwork];
+    if (accountIndex < 0 || accountIndex >= networkConfig.accounts.length) {
+      throw new Error(`Invalid account index provided: ${accountIndex}`);
+    }
+    const privateKey = networkConfig.accounts[accountIndex];
+    const accountAddress = networkConfig.addresses[accountIndex];
+    this.account = new import_starknet.Account(
+      this.provider,
+      accountAddress,
+      privateKey,
+    );
+    logInfo(
+      `Switched to account index ${accountIndex}. New account address: ${accountAddress}`,
+    );
+  }
+  /**
    * Deploys a contract with the given configuration.
    *
    * @param contractName The name of the contract to be deployed
@@ -330,8 +389,8 @@ var ContractManager = class {
    * @returns A promise that resolves when the deployment is complete.
    * @throws Will throw an error if the deployment fails.
    */
-  async deployContract(config) {
-    const { contractName, constructorArgs } = config;
+  async deployContract(config2) {
+    const { contractName, constructorArgs } = config2;
     logInfo(
       `Deploying contract: ${contractName}, with initial args: ${JSON.stringify(constructorArgs, replacer, 2)}`,
     );
@@ -501,11 +560,17 @@ Explorer URL: ${getExplorerUrl(successReceipt.transaction_hash)}`,
   }
 };
 var initializeContractManager = () => {
-  const rpcEndpoint = process.env.RPC_ENDPOINT;
-  const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
-  const accountAddress = process.env.DEPLOYER_ADDRESS;
+  const currentNetwork = config_default.defaultNetwork;
+  const networkConfig = config_default[currentNetwork];
+  if (!networkConfig) {
+    logError(`No configuration found for network: ${currentNetwork}`);
+    throw new Error();
+  }
+  const rpcEndpoint = networkConfig.rpcUrl;
+  const privateKey = networkConfig.accounts[0];
+  const accountAddress = networkConfig.accountAddress;
   if (!rpcEndpoint || !privateKey || !accountAddress) {
-    throw new Error('Missing required environment variables');
+    throw new Error('Missing required network configuration values');
   }
   return new ContractManager(rpcEndpoint, privateKey, accountAddress);
 };
@@ -514,6 +579,7 @@ var initializeContractManager = () => {
   (module.exports = {
     ContractManager,
     createProjectStructure,
+    defaultConfigContent,
     ensureDirectoryExists,
     ensureFileExists,
     exampleDeploymentScript,

@@ -18,6 +18,11 @@ declare class ContractManager {
   account: Account;
   constructor(rpcEndpoint: string, privateKey: string, accountAddress: string);
   /**
+   * Updates the account used for contract deployment and interaction.
+   * @param accountIndex The index of the account in the configuration.
+   */
+  updateAccount(accountIndex: number): void;
+  /**
    * Deploys a contract with the given configuration.
    *
    * @param contractName The name of the contract to be deployed
@@ -109,14 +114,16 @@ declare function getCompiledCode(contractName: string): Promise<{
 }>;
 /**
  * Creates the project structure with the following directories:
- * - src/scripts/deployments
- * - src/scripts/tasks
+ * - scriptsDir/deployments
+ * - scriptsDir/tasks
  */
 declare function createProjectStructure(): Promise<void>;
 declare const exampleDeploymentScript =
   '\nimport "dotenv/config";\nimport { initializeContractManager } from "starknet-deploy/dist/index";\n\nasync function main() {\n  const contractManager = initializeContractManager();\n\n  await contractManager.deployContract({\n    contractName: "<contract_name>",\n  });\n}\n\nmain()\n  .then(() => process.exit(0))\n  .catch((error) => {\n    console.error(error);\n    process.exit(1);\n  });\n';
 declare const exampleTaskContent =
   "\nimport { initializeContractManager } from \"starknet-deploy/dist/index\";\nimport { Command } from 'commander';\n\nasync function main() {\n\n  const program = new Command();\n  program\n    .requiredOption('-c, --param <param_type>', 'Param definition')\n\n  program.parse(process.argv);\n  const options = program.opts();\n}\n\nmain().catch((error) => {\n  console.error(error);\n  process.exit(1);\n});";
+declare const defaultConfigContent =
+  "module.exports = {\n  defaultNetwork: 'sepolia',\n  sepolia: {\n    rpcUrl: 'https://starknet-sepolia.public.blastapi.io',\n    accounts: ['<privateKey1>'],\n    addresses: ['<address1>'],\n  },\n  paths: {\n    contractClasses: 'target/dev',\n    deploymentScripts: 'src/scripts/deployments',\n    taskScripts: 'src/scripts/tasks'\n  },\n};\n";
 
 declare function logInfo(message: string): void;
 declare function logWarn(message: string): void;
@@ -138,6 +145,7 @@ declare function logDeploymentDetails(
 export {
   ContractManager,
   createProjectStructure,
+  defaultConfigContent,
   ensureDirectoryExists,
   ensureFileExists,
   exampleDeploymentScript,
