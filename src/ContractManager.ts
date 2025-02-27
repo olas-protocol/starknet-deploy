@@ -14,6 +14,8 @@ import {
 } from './fileUtils';
 import { logError, logInfo, logSuccess, logDeploymentDetails } from './logger';
 import { getExplorerUrl, handleError, replacer } from './common';
+import config from './config';
+
 interface DeploymentConfig {
   contractName: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,6 +32,26 @@ export class ContractManager {
     this.provider = new RpcProvider({ nodeUrl: rpcEndpoint });
     this.account = new Account(this.provider, accountAddress, privateKey);
   }
+
+  /**
+   * Updates the account used for contract deployment and interaction.
+   * @param accountIndex The index of the account in the configuration.
+   */
+  public updateAccount(accountIndex: number): void {
+    const currentNetwork = config.defaultNetwork;
+    const networkConfig = config[currentNetwork];
+    if (accountIndex < 0 || accountIndex >= networkConfig.accounts.length) {
+      throw new Error(`Invalid account index provided: ${accountIndex}`);
+    }
+    const privateKey = networkConfig.accounts[accountIndex];
+    // TODO: derive address from private key
+    const accountAddress = networkConfig.addresses[accountIndex];
+    this.account = new Account(this.provider, accountAddress, privateKey);
+    logInfo(
+      `Switched to account index ${accountIndex}. New account address: ${accountAddress}`,
+    );
+  }
+
   /**
    * Deploys a contract with the given configuration.
    *
@@ -252,12 +274,20 @@ export class ContractManager {
  * @throws Will throw an error if required environment variables are missing.
  */
 export const initializeContractManager = (): ContractManager => {
-  const rpcEndpoint = process.env.RPC_ENDPOINT;
-  const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
-  const accountAddress = process.env.DEPLOYER_ADDRESS;
+  const currentNetwork = config.defaultNetwork;
+  const networkConfig = config[currentNetwork];
+
+  if (!networkConfig) {
+    logError(`No configuration found for network: ${currentNetwork}`);
+    throw new Error();
+  }
+
+  const rpcEndpoint = networkConfig.rpcUrl;
+  const privateKey = networkConfig.accounts[0];
+  const accountAddress = networkConfig.accountAddress;
 
   if (!rpcEndpoint || !privateKey || !accountAddress) {
-    throw new Error('Missing required environment variables');
+    throw new Error('Missing required network configuration values');
   }
 
   return new ContractManager(rpcEndpoint, privateKey, accountAddress);

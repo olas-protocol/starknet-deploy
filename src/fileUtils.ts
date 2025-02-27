@@ -3,7 +3,14 @@ import path from 'path';
 import toml from 'toml';
 import { logSuccess, logError } from './logger';
 import { logInfo } from './logger';
+import config from './config';
+
 const projectRoot = process.cwd();
+
+const scriptsDir = config.paths.scripts || 'src/scripts';
+const deploymentsDir = `${scriptsDir}/deployments`;
+const tasksDir = `${scriptsDir}/tasks`;
+const contractClassesDir = config.paths.contractClasses || 'target/dev';
 
 export async function ensureDirectoryExists(dirPath: string): Promise<void> {
   try {
@@ -35,7 +42,7 @@ export async function saveContractAddress(
 ) {
   const filePath = path.join(
     projectRoot,
-    'src/scripts/deployments',
+    deploymentsDir,
     'deployed_contract_addresses.json',
   );
   try {
@@ -57,7 +64,7 @@ export async function fetchContractAddress(
 ): Promise<string | undefined> {
   const filePath = path.join(
     projectRoot,
-    'src/scripts/deployments',
+    deploymentsDir,
     'deployed_contract_addresses.json',
   );
   try {
@@ -93,12 +100,12 @@ export async function getCompiledCode(contractName: string) {
   const packageName = await getPackageName();
   const sierraFilePath = path.join(
     projectRoot,
-    'target/dev',
+    contractClassesDir,
     `${packageName}_${contractName}.contract_class.json`,
   );
   const casmFilePath = path.join(
     projectRoot,
-    'target/dev',
+    contractClassesDir,
     `${packageName}_${contractName}.compiled_contract_class.json`,
   );
 
@@ -117,47 +124,48 @@ export async function getCompiledCode(contractName: string) {
 
 /**
  * Creates the project structure with the following directories:
- * - src/scripts/deployments
- * - src/scripts/tasks
+ * - scriptsDir/deployments
+ * - scriptsDir/tasks
  */
 export async function createProjectStructure() {
   try {
     console.log('fetching package name');
     const packageName = await getPackageName();
     console.log('Package name:', packageName);
-    const scriptsDir = path.join(process.cwd(), 'src/scripts');
     console.log(LOGO);
     logInfo(`Initializing project structure for ${packageName}...`);
 
     // Create scripts directory and its subdirectories
-    await ensureDirectoryExists(path.join(scriptsDir, 'deployments'));
-    await ensureDirectoryExists(path.join(scriptsDir, 'tasks'));
+    await ensureDirectoryExists(path.join(projectRoot, deploymentsDir));
+    await ensureDirectoryExists(path.join(projectRoot, tasksDir));
     console.log('Creating example task file');
+
     // Create example task file
-    const exampleTaskPath = path.join(scriptsDir, 'tasks', 'example_task.ts');
+    const exampleTaskPath = path.join(projectRoot, tasksDir, 'example_task.ts');
     console.log('Example task path:', exampleTaskPath);
 
     await fs.writeFile(exampleTaskPath, exampleTaskContent);
 
     // Create example deployment script
     const exampleDeploymentPath = path.join(
-      scriptsDir,
-      'deployments',
+      projectRoot,
+      deploymentsDir,
       'example_deployment.ts',
     );
     await fs.writeFile(exampleDeploymentPath, exampleDeploymentScript);
 
     // Create empty addresses file
     const addressesPath = path.join(
-      scriptsDir,
-      'deployments',
+      projectRoot,
+      deploymentsDir,
       'deployed_contract_addresses.json',
     );
+
     await fs.writeFile(addressesPath, JSON.stringify({}, null, 2));
     logSuccess('\nStarknet Deploy Project structure created successfully! 🚀');
     logInfo(`\nNext steps:
-  1. Add your scripts in src/scripts/tasks
-  2. Store your deployment artifacts in src/scripts/deployments`);
+  1. Add your scripts in ${tasksDir}
+  2. Store your deployment artifacts in ${deploymentsDir}`);
   } catch (error) {
     logError(`Failed to create project structure: ${error}`);
     process.exit(1);
@@ -219,4 +227,20 @@ const LOGO = `
 ██║  ██║██╔══╝  ██╔═══╝ ██║     ██║   ██║  ╚██╔╝                    
 ██████╔╝███████╗██║     ███████╗╚██████╔╝   ██║                     
 ╚═════╝ ╚══════╝╚═╝     ╚══════╝ ╚═════╝    ╚═╝                                       
+`;
+
+// Default configuration file content that will be created during init
+export const defaultConfigContent = `module.exports = {
+  defaultNetwork: 'sepolia',
+  sepolia: {
+    rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
+    accounts: ['<privateKey1>'],
+    addresses: ['<address1>'],
+  },
+  paths: {
+    contractClasses: 'target/dev',
+    deploymentScripts: 'src/scripts/deployments',
+    taskScripts: 'src/scripts/tasks'
+  },
+};
 `;

@@ -1,13 +1,13 @@
 import colors from 'colors';
 import { BigNumberish } from 'starknet';
-
+import config from './config';
 enum LogLevel {
   INFO = 'INFO',
   WARN = 'WARN',
   ERROR = 'ERROR',
   SUCCESS = 'SUCCESS',
 }
-
+const explorerURL = `https://${config.defaultNetwork}.starkscan.co/`;
 // Format the log message
 function formatLog(level: LogLevel, message: string): string {
   return `\n[${level}] ${message}`;
@@ -45,7 +45,7 @@ export function logDeploymentDetails(
     ${colors.green(`${contractName} Contract deployed successfully`)}
     ${colors.green(`Class Hash: ${classHash}`)}
     ${colors.green(`Contract Address: ${contractAddress}`)}
-    ${colors.green(`Explorer URL: ${process.env.BLOCK_EXPLORER_URL}/contract/${contractAddress}`)}
+    ${colors.green(`Explorer URL: ${explorerURL}/contract/${contractAddress}`)}
     `;
   logSuccess(deploymentMessage);
 }
