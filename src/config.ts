@@ -10,6 +10,8 @@ if (!existsSync(configPath)) {
   );
 }
 
-const config = require(configPath) as StarknetDeployConfig;
+// Change the require to a dynamic import
+const loadedConfig = require(configPath);
+const config: StarknetDeployConfig = loadedConfig.default || loadedConfig;
 
 export default config;

@@ -3625,7 +3625,8 @@ if (!(0, import_fs.existsSync)(configPath)) {
     'Configuration file(starknet-deploy.config.ts) not found. Please run `starknet-deploy init` to create one.',
   );
 }
-var config = require(configPath);
+var loadedConfig = require(configPath);
+var config = loadedConfig.default || loadedConfig;
 var config_default = config;
 
 // src/logger.ts
@@ -3660,7 +3661,7 @@ var contractClassesDir = config_default.paths.contractClasses || 'target/dev';
 async function ensureDirectoryExists(dirPath) {
   try {
     await import_fs2.promises.mkdir(dirPath, { recursive: true });
-    logSuccess(`Created directory: ${dirPath}`);
+    logInfo(`Created directory: ${dirPath}`);
   } catch (error) {
     logError(`Error creating directory ${dirPath}: ${error}`);
     throw error;

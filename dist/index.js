@@ -82,7 +82,8 @@ if (!(0, import_fs.existsSync)(configPath)) {
     'Configuration file(starknet-deploy.config.ts) not found. Please run `starknet-deploy init` to create one.',
   );
 }
-var config = require(configPath);
+var loadedConfig = require(configPath);
+var config = loadedConfig.default || loadedConfig;
 var config_default = config;
 
 // src/logger.ts
@@ -131,16 +132,26 @@ var contractClassesDir = config_default.paths.contractClasses || 'target/dev';
 async function ensureDirectoryExists(dirPath) {
   try {
     await import_fs2.promises.mkdir(dirPath, { recursive: true });
-    logSuccess(`Created directory: ${dirPath}`);
+    logInfo(`Created directory: ${dirPath}`);
   } catch (error) {
     logError(`Error creating directory ${dirPath}: ${error}`);
     throw error;
   }
 }
 async function ensureFileExists(filePath) {
-  if (!(0, import_fs2.existsSync)(filePath)) {
-    console.log('File does not exist, creating a new one.');
-    await import_fs2.promises.writeFile(filePath, JSON.stringify({}));
+  try {
+    const directory = import_path2.default.dirname(filePath);
+    if (!(0, import_fs2.existsSync)(directory)) {
+      await import_fs2.promises.mkdir(directory, { recursive: true });
+      logInfo(`Created directory: ${directory}`);
+    }
+    if (!(0, import_fs2.existsSync)(filePath)) {
+      await import_fs2.promises.writeFile(filePath, JSON.stringify({}));
+      logInfo(`Created file: ${filePath}`);
+    }
+  } catch (error) {
+    logError(`Error ensuring file exists: ${error}`);
+    throw error;
   }
 }
 function getNetworkDeploymentPath(network) {
@@ -152,11 +163,8 @@ function getNetworkDeploymentPath(network) {
   );
 }
 async function saveContractAddress(contractName, contractAddress, network) {
-  const filePath = getNetworkDeploymentPath(network);
   try {
-    await ensureDirectoryExists(
-      import_path2.default.join(projectRoot, deploymentsDir),
-    );
+    const filePath = getNetworkDeploymentPath(network);
     await ensureFileExists(filePath);
     const data = await import_fs2.promises.readFile(filePath, 'utf8');
     const jsonData = data.trim() ? JSON.parse(data) : {};
@@ -172,13 +180,14 @@ async function saveContractAddress(contractName, contractAddress, network) {
   }
 }
 async function fetchContractAddress(contractName, network) {
-  const filePath = getNetworkDeploymentPath(network);
   try {
+    const filePath = getNetworkDeploymentPath(network);
+    await ensureFileExists(filePath);
     const data = await import_fs2.promises.readFile(filePath, 'utf8');
     const jsonData = JSON.parse(data);
     return jsonData[contractName];
   } catch (error) {
-    logError(`Error fetching contract address:, ${error}`);
+    logError(`Error fetching contract address: ${error}`);
     throw error;
   }
 }
@@ -320,6 +329,7 @@ const config: StarknetDeployConfig = {
     }
   },
   paths: {
+    root: process.cwd(),
     contractClasses: 'target/dev',
     scripts: 'src/scripts',
   }

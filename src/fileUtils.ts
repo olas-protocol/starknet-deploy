@@ -14,7 +14,7 @@ const contractClassesDir = config.paths.contractClasses || 'target/dev';
 export async function ensureDirectoryExists(dirPath: string): Promise<void> {
   try {
     await fs.mkdir(dirPath, { recursive: true });
-    logSuccess(`Created directory: ${dirPath}`);
+    logInfo(`Created directory: ${dirPath}`);
   } catch (error) {
     logError(`Error creating directory ${dirPath}: ${error}`);
     throw error;
@@ -23,9 +23,20 @@ export async function ensureDirectoryExists(dirPath: string): Promise<void> {
 
 // Ensures file exists or creates an empty JSON file if not
 export async function ensureFileExists(filePath: string): Promise<void> {
-  if (!existsSync(filePath)) {
-    console.log('File does not exist, creating a new one.');
-    await fs.writeFile(filePath, JSON.stringify({}));
+  try {
+    const directory = path.dirname(filePath);
+    if (!existsSync(directory)) {
+      await fs.mkdir(directory, { recursive: true });
+      logInfo(`Created directory: ${directory}`);
+    }
+
+    if (!existsSync(filePath)) {
+      await fs.writeFile(filePath, JSON.stringify({}));
+      logInfo(`Created file: ${filePath}`);
+    }
+  } catch (error) {
+    logError(`Error ensuring file exists: ${error}`);
+    throw error;
   }
 }
 
@@ -49,11 +60,10 @@ export async function saveContractAddress(
   contractAddress: string,
   network: string,
 ) {
-  const filePath = getNetworkDeploymentPath(network);
   try {
-    await ensureDirectoryExists(path.join(projectRoot, deploymentsDir));
+    // Create directories and file if they don't exist
+    const filePath = getNetworkDeploymentPath(network);
     await ensureFileExists(filePath);
-
     const data = await fs.readFile(filePath, 'utf8');
     const jsonData = data.trim() ? JSON.parse(data) : {};
     jsonData[contractName] = contractAddress;
@@ -70,17 +80,18 @@ export async function fetchContractAddress(
   contractName: string,
   network: string,
 ): Promise<string | undefined> {
-  const filePath = getNetworkDeploymentPath(network);
   try {
+    // Create directories and file if they don't exist
+    const filePath = getNetworkDeploymentPath(network);
+    await ensureFileExists(filePath);
     const data = await fs.readFile(filePath, 'utf8');
     const jsonData = JSON.parse(data);
     return jsonData[contractName];
   } catch (error) {
-    logError(`Error fetching contract address:, ${error}`);
+    logError(`Error fetching contract address: ${error}`);
     throw error;
   }
 }
-
 /**
  * Retrieves the compiled Sierra and CASM code for a given contract.
  *
@@ -234,6 +245,7 @@ const config: StarknetDeployConfig = {
     }
   },
   paths: {
+    root: process.cwd(),
     contractClasses: 'target/dev',
     scripts: 'src/scripts',
   }
