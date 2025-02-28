@@ -11,10 +11,10 @@ import {
   getCompiledCode,
   saveContractAddress,
   fetchContractAddress,
+  loadConfigFile,
 } from './fileUtils';
 import { logError, logInfo, logSuccess, logDeploymentDetails } from './logger';
 import { getExplorerUrl, handleError, replacer } from './common';
-import config from './config';
 
 interface DeploymentConfig {
   contractName: string;
@@ -37,7 +37,8 @@ export class ContractManager {
    * Updates the account used for contract deployment and interaction.
    * @param accountIndex The index of the account in the configuration.
    */
-  public updateAccount(accountIndex: number): void {
+  async updateAccount(accountIndex: number): Promise<void> {
+    const config = await loadConfigFile();
     const currentNetwork = config.defaultNetwork;
     const networkConfig = config.networks[currentNetwork];
 
@@ -81,6 +82,7 @@ export class ContractManager {
 
   async deployContract(deploymentConfig: DeploymentConfig): Promise<void> {
     const { contractName, constructorArgs } = deploymentConfig;
+    const config = await loadConfigFile();
     const currentNetwork = config.defaultNetwork;
 
     logInfo(
@@ -126,6 +128,7 @@ export class ContractManager {
    *
    */
   async getContractInstance(contractName: string): Promise<Contract> {
+    const config = await loadConfigFile();
     const currentNetwork = config.defaultNetwork;
     const contractAddress = await fetchContractAddress(
       contractName,
@@ -301,7 +304,8 @@ export class ContractManager {
  * @returns A new Contract Manager instance.
  * @throws Will throw an error if required environment variables are missing.
  */
-export const initializeContractManager = (): ContractManager => {
+export const initializeContractManager = async (): Promise<ContractManager> => {
+  const config = await loadConfigFile();
   const currentNetwork = config.defaultNetwork;
   const networkConfig = config.networks[currentNetwork];
 

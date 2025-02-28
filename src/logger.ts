@@ -1,13 +1,13 @@
 import colors from 'colors';
 import { BigNumberish } from 'starknet';
-import config from './config';
 enum LogLevel {
   INFO = 'INFO',
   WARN = 'WARN',
   ERROR = 'ERROR',
   SUCCESS = 'SUCCESS',
 }
-const explorerURL = `https://${config.defaultNetwork}.starkscan.co/`;
+const explorerURL = `https://starkscan.co/`;
+
 // Format the log message
 function formatLog(level: LogLevel, message: string): string {
   return `\n[${level}] ${message}`;

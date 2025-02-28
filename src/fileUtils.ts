@@ -2,14 +2,7 @@ import { promises as fs, existsSync } from 'fs';
 import path from 'path';
 import { logSuccess, logError } from './logger';
 import { logInfo } from './logger';
-import config from './config';
-
-const projectRoot = config.paths.root || process.cwd();
-const packageName = config.paths.package_name || '';
-const scriptsDir = config.paths.scripts || 'src/scripts';
-const deploymentsDir = `${scriptsDir}/deployments`;
-const tasksDir = `${scriptsDir}/tasks`;
-const contractClassesDir = config.paths.contractClasses || 'target/dev';
+import { StarknetDeployConfig } from './types';
 
 export async function ensureDirectoryExists(dirPath: string): Promise<void> {
   try {
@@ -40,10 +33,14 @@ export async function ensureFileExists(filePath: string): Promise<void> {
   }
 }
 
-export function getNetworkDeploymentPath(network: string): string {
+export async function getNetworkDeploymentPath(
+  network: string,
+): Promise<string> {
+  const config = await loadConfigFile();
+
   return path.join(
-    projectRoot,
-    deploymentsDir,
+    config.paths.root || process.cwd(),
+    'deployments',
     network,
     'deployed_contract_addresses.json',
   );
@@ -62,7 +59,7 @@ export async function saveContractAddress(
 ) {
   try {
     // Create directories and file if they don't exist
-    const filePath = getNetworkDeploymentPath(network);
+    const filePath = await getNetworkDeploymentPath(network);
     await ensureFileExists(filePath);
     const data = await fs.readFile(filePath, 'utf8');
     const jsonData = data.trim() ? JSON.parse(data) : {};
@@ -82,7 +79,7 @@ export async function fetchContractAddress(
 ): Promise<string | undefined> {
   try {
     // Create directories and file if they don't exist
-    const filePath = getNetworkDeploymentPath(network);
+    const filePath = await getNetworkDeploymentPath(network);
     await ensureFileExists(filePath);
     const data = await fs.readFile(filePath, 'utf8');
     const jsonData = JSON.parse(data);
@@ -99,6 +96,11 @@ export async function fetchContractAddress(
  * @returns am object containing the Sierra and CASM code.
  */
 export async function getCompiledCode(contractName: string) {
+  const config = await loadConfigFile();
+  const packageName = config.paths.package_name || '';
+  const projectRoot = config.paths.root || process.cwd();
+  const contractClassesDir = config.paths.contractClasses || 'target/dev';
+
   const sierraFilePath = path.join(
     projectRoot,
     contractClassesDir,
@@ -132,6 +134,12 @@ export async function createProjectStructure() {
   try {
     console.log(LOGO);
     logInfo(`Initializing project structure ...`);
+
+    const config = await loadConfigFile();
+    const projectRoot = config.paths.root || process.cwd();
+    const scriptsDir = config.paths.scripts || 'src/scripts';
+    const tasksDir = `${scriptsDir}/tasks`;
+    const deploymentsDir = `${scriptsDir}/deployments`;
 
     // Create scripts directory and its subdirectories
     await ensureDirectoryExists(path.join(projectRoot, deploymentsDir));
@@ -168,6 +176,40 @@ export async function createProjectStructure() {
     logError(`Failed to create project structure: ${error}`);
     process.exit(1);
   }
+}
+
+/**
+ * Creates a default configuration file at the specified path
+ * @param configPath - Path where the config file should be created
+ */
+export async function createDefaultConfigFile(
+  configPath: string,
+): Promise<void> {
+  try {
+    await fs.writeFile(configPath, defaultConfigContent);
+    logInfo(`Created default configuration file at ${configPath}`);
+    logInfo('\nPlease update the configuration file with your:');
+    logInfo('1. Network private keys in the accounts array');
+    logInfo('2. Account addresses in the addresses array');
+  } catch (error) {
+    logError(`Failed to create default config file: ${error}`);
+    throw error;
+  }
+}
+
+export async function loadConfigFile(): Promise<StarknetDeployConfig> {
+  const configPath = path.join(process.cwd(), 'starknet-deploy.config.ts');
+
+  // If config file doesn't exist, create it using the default template
+  if (!existsSync(configPath)) {
+    await createDefaultConfigFile(configPath);
+    process.exit(1);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const loadedConfig = require(configPath);
+  // Support both default exports and direct module exports
+  return loadedConfig.default || loadedConfig;
 }
 
 // Example deployment script content
@@ -254,3 +296,25 @@ const config: StarknetDeployConfig = {
 
 export default config;
 `;
+
+export const defaultConfig: StarknetDeployConfig = {
+  defaultNetwork: 'sepolia',
+  networks: {
+    sepolia: {
+      rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
+      accounts: ['<privateKey1>'],
+      addresses: ['<address1>'],
+    },
+    local: {
+      rpcUrl: 'http://localhost:5050',
+      accounts: [],
+      addresses: [],
+    },
+  },
+  paths: {
+    root: process.cwd(),
+    package_name: 'test_project', // cairo package name
+    contractClasses: 'target/dev',
+    scripts: 'src/scripts',
+  },
+};

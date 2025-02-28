@@ -78,29 +78,13 @@ import {
 
 // src/fileUtils.ts
 init_esm_shims();
-import { promises as fs, existsSync as existsSync2 } from 'fs';
-import path3 from 'path';
+import { promises as fs, existsSync } from 'fs';
+import path2 from 'path';
 
 // src/logger.ts
 init_esm_shims();
 import colors from 'colors';
-
-// src/config.ts
-init_esm_shims();
-import path2 from 'path';
-import { existsSync } from 'fs';
-var configPath = path2.join(process.cwd(), 'starknet-deploy.config.ts');
-if (!existsSync(configPath)) {
-  throw new Error(
-    'Configuration file(starknet-deploy.config.ts) not found. Please run `starknet-deploy init` to create one.',
-  );
-}
-var loadedConfig = __require(configPath);
-var config = loadedConfig.default || loadedConfig;
-var config_default = config;
-
-// src/logger.ts
-var explorerURL = `https://${config_default.defaultNetwork}.starkscan.co/`;
+var explorerURL = `https://starkscan.co/`;
 function formatLog(level, message) {
   return `
 [${level}] ${message}`;
@@ -128,12 +112,6 @@ function logDeploymentDetails(contractName, classHash, contractAddress) {
 }
 
 // src/fileUtils.ts
-var projectRoot = config_default.paths.root || process.cwd();
-var packageName = config_default.paths.package_name || '';
-var scriptsDir = config_default.paths.scripts || 'src/scripts';
-var deploymentsDir = `${scriptsDir}/deployments`;
-var tasksDir = `${scriptsDir}/tasks`;
-var contractClassesDir = config_default.paths.contractClasses || 'target/dev';
 async function ensureDirectoryExists(dirPath) {
   try {
     await fs.mkdir(dirPath, { recursive: true });
@@ -145,12 +123,12 @@ async function ensureDirectoryExists(dirPath) {
 }
 async function ensureFileExists(filePath) {
   try {
-    const directory = path3.dirname(filePath);
-    if (!existsSync2(directory)) {
+    const directory = path2.dirname(filePath);
+    if (!existsSync(directory)) {
       await fs.mkdir(directory, { recursive: true });
       logInfo(`Created directory: ${directory}`);
     }
-    if (!existsSync2(filePath)) {
+    if (!existsSync(filePath)) {
       await fs.writeFile(filePath, JSON.stringify({}));
       logInfo(`Created file: ${filePath}`);
     }
@@ -159,17 +137,18 @@ async function ensureFileExists(filePath) {
     throw error;
   }
 }
-function getNetworkDeploymentPath(network) {
-  return path3.join(
-    projectRoot,
-    deploymentsDir,
+async function getNetworkDeploymentPath(network) {
+  const config = await loadConfigFile();
+  return path2.join(
+    config.paths.root || process.cwd(),
+    'deployments',
     network,
     'deployed_contract_addresses.json',
   );
 }
 async function saveContractAddress(contractName, contractAddress, network) {
   try {
-    const filePath = getNetworkDeploymentPath(network);
+    const filePath = await getNetworkDeploymentPath(network);
     await ensureFileExists(filePath);
     const data = await fs.readFile(filePath, 'utf8');
     const jsonData = data.trim() ? JSON.parse(data) : {};
@@ -183,7 +162,7 @@ async function saveContractAddress(contractName, contractAddress, network) {
 }
 async function fetchContractAddress(contractName, network) {
   try {
-    const filePath = getNetworkDeploymentPath(network);
+    const filePath = await getNetworkDeploymentPath(network);
     await ensureFileExists(filePath);
     const data = await fs.readFile(filePath, 'utf8');
     const jsonData = JSON.parse(data);
@@ -194,12 +173,16 @@ async function fetchContractAddress(contractName, network) {
   }
 }
 async function getCompiledCode(contractName) {
-  const sierraFilePath = path3.join(
+  const config = await loadConfigFile();
+  const packageName = config.paths.package_name || '';
+  const projectRoot = config.paths.root || process.cwd();
+  const contractClassesDir = config.paths.contractClasses || 'target/dev';
+  const sierraFilePath = path2.join(
     projectRoot,
     contractClassesDir,
     `${packageName}_${contractName}.contract_class.json`,
   );
-  const casmFilePath = path3.join(
+  const casmFilePath = path2.join(
     projectRoot,
     contractClassesDir,
     `${packageName}_${contractName}.compiled_contract_class.json`,
@@ -218,23 +201,28 @@ async function createProjectStructure() {
   try {
     console.log(LOGO);
     logInfo(`Initializing project structure ...`);
-    await ensureDirectoryExists(path3.join(projectRoot, deploymentsDir));
-    await ensureDirectoryExists(path3.join(projectRoot, tasksDir));
+    const config = await loadConfigFile();
+    const projectRoot = config.paths.root || process.cwd();
+    const scriptsDir = config.paths.scripts || 'src/scripts';
+    const tasksDir = `${scriptsDir}/tasks`;
+    const deploymentsDir = `${scriptsDir}/deployments`;
+    await ensureDirectoryExists(path2.join(projectRoot, deploymentsDir));
+    await ensureDirectoryExists(path2.join(projectRoot, tasksDir));
     logInfo('Creating example task file');
-    const exampleTaskPath = path3.join(
+    const exampleTaskPath = path2.join(
       projectRoot,
       tasksDir,
       'example_task.ts',
     );
     logInfo(`Example task path: ${exampleTaskPath}`);
     await fs.writeFile(exampleTaskPath, exampleTaskContent);
-    const exampleDeploymentPath = path3.join(
+    const exampleDeploymentPath = path2.join(
       projectRoot,
       deploymentsDir,
       'example_deployment.ts',
     );
     await fs.writeFile(exampleDeploymentPath, exampleDeploymentScript);
-    const addressesPath = path3.join(
+    const addressesPath = path2.join(
       projectRoot,
       deploymentsDir,
       'deployed_contract_addresses.json',
@@ -251,6 +239,27 @@ Next steps:
     logError(`Failed to create project structure: ${error}`);
     process.exit(1);
   }
+}
+async function createDefaultConfigFile(configPath) {
+  try {
+    await fs.writeFile(configPath, defaultConfigContent);
+    logInfo(`Created default configuration file at ${configPath}`);
+    logInfo('\nPlease update the configuration file with your:');
+    logInfo('1. Network private keys in the accounts array');
+    logInfo('2. Account addresses in the addresses array');
+  } catch (error) {
+    logError(`Failed to create default config file: ${error}`);
+    throw error;
+  }
+}
+async function loadConfigFile() {
+  const configPath = path2.join(process.cwd(), 'starknet-deploy.config.ts');
+  if (!existsSync(configPath)) {
+    await createDefaultConfigFile(configPath);
+    process.exit(1);
+  }
+  const loadedConfig = __require(configPath);
+  return loadedConfig.default || loadedConfig;
 }
 var exampleDeploymentScript = `
 import "dotenv/config";
@@ -330,6 +339,28 @@ const config: StarknetDeployConfig = {
 
 export default config;
 `;
+var defaultConfig = {
+  defaultNetwork: 'sepolia',
+  networks: {
+    sepolia: {
+      rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
+      accounts: ['<privateKey1>'],
+      addresses: ['<address1>'],
+    },
+    local: {
+      rpcUrl: 'http://localhost:5050',
+      accounts: [],
+      addresses: [],
+    },
+  },
+  paths: {
+    root: process.cwd(),
+    package_name: 'test_project',
+    // cairo package name
+    contractClasses: 'target/dev',
+    scripts: 'src/scripts',
+  },
+};
 
 // src/common.ts
 init_esm_shims();
@@ -362,9 +393,10 @@ var ContractManager = class {
    * Updates the account used for contract deployment and interaction.
    * @param accountIndex The index of the account in the configuration.
    */
-  updateAccount(accountIndex) {
-    const currentNetwork = config_default.defaultNetwork;
-    const networkConfig = config_default.networks[currentNetwork];
+  async updateAccount(accountIndex) {
+    const config = await loadConfigFile();
+    const currentNetwork = config.defaultNetwork;
+    const networkConfig = config.networks[currentNetwork];
     if (!networkConfig) {
       throw new Error(
         `Network configuration not found for network: ${currentNetwork}`,
@@ -400,7 +432,8 @@ var ContractManager = class {
    */
   async deployContract(deploymentConfig) {
     const { contractName, constructorArgs } = deploymentConfig;
-    const currentNetwork = config_default.defaultNetwork;
+    const config = await loadConfigFile();
+    const currentNetwork = config.defaultNetwork;
     logInfo(
       `Deploying contract: ${contractName}, with initial args: ${JSON.stringify(constructorArgs, replacer, 2)}`,
     );
@@ -440,7 +473,8 @@ var ContractManager = class {
    *
    */
   async getContractInstance(contractName) {
-    const currentNetwork = config_default.defaultNetwork;
+    const config = await loadConfigFile();
+    const currentNetwork = config.defaultNetwork;
     const contractAddress = await fetchContractAddress(
       contractName,
       currentNetwork,
@@ -573,9 +607,10 @@ Explorer URL: ${getExplorerUrl(successReceipt.transaction_hash)}`,
     });
   }
 };
-var initializeContractManager = () => {
-  const currentNetwork = config_default.defaultNetwork;
-  const networkConfig = config_default.networks[currentNetwork];
+var initializeContractManager = async () => {
+  const config = await loadConfigFile();
+  const currentNetwork = config.defaultNetwork;
+  const networkConfig = config.networks[currentNetwork];
   if (!networkConfig) {
     logError(`No configuration found for network: ${currentNetwork}`);
     throw new Error();
@@ -609,9 +644,12 @@ export {
   fetchContractAddress,
   getCompiledCode,
   createProjectStructure,
+  createDefaultConfigFile,
+  loadConfigFile,
   exampleDeploymentScript,
   exampleTaskContent,
   defaultConfigContent,
+  defaultConfig,
   ContractManager,
   initializeContractManager,
 };
