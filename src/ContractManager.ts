@@ -39,19 +39,37 @@ export class ContractManager {
    */
   public updateAccount(accountIndex: number): void {
     const currentNetwork = config.defaultNetwork;
-    const networkConfig = config[currentNetwork];
+    const networkConfig = config.networks[currentNetwork];
+
+    if (!networkConfig) {
+      throw new Error(
+        `Network configuration not found for network: ${currentNetwork}`,
+      );
+    }
+
     if (accountIndex < 0 || accountIndex >= networkConfig.accounts.length) {
       throw new Error(`Invalid account index provided: ${accountIndex}`);
     }
+
     const privateKey = networkConfig.accounts[accountIndex];
-    // TODO: derive address from private key
     const accountAddress = networkConfig.addresses[accountIndex];
+
+    if (!privateKey) {
+      throw new Error(
+        `Private key not found for account index: ${accountIndex}`,
+      );
+    }
+    if (!accountAddress) {
+      throw new Error(
+        `Account address not found for account index: ${accountIndex}`,
+      );
+    }
+
     this.account = new Account(this.provider, accountAddress, privateKey);
     logInfo(
       `Switched to account index ${accountIndex}. New account address: ${accountAddress}`,
     );
   }
-
   /**
    * Deploys a contract with the given configuration.
    *
@@ -61,8 +79,9 @@ export class ContractManager {
    * @throws Will throw an error if the deployment fails.
    */
 
-  async deployContract(config: DeploymentConfig): Promise<void> {
-    const { contractName, constructorArgs } = config;
+  async deployContract(deploymentConfig: DeploymentConfig): Promise<void> {
+    const { contractName, constructorArgs } = deploymentConfig;
+    const currentNetwork = config.defaultNetwork;
 
     logInfo(
       `Deploying contract: ${contractName}, with initial args: ${JSON.stringify(constructorArgs, replacer, 2)}`,
@@ -89,7 +108,11 @@ export class ContractManager {
         deployResponse.declare.class_hash,
         deployResponse.deploy.address,
       );
-      await saveContractAddress(contractName, deployResponse.deploy.address);
+      await saveContractAddress(
+        contractName,
+        deployResponse.deploy.address,
+        currentNetwork,
+      );
     } catch (error) {
       logError(`Failed to deploy ${contractName} contract`);
       console.error(error);
@@ -103,7 +126,12 @@ export class ContractManager {
    *
    */
   async getContractInstance(contractName: string): Promise<Contract> {
-    const contractAddress = await fetchContractAddress(contractName);
+    const currentNetwork = config.defaultNetwork;
+    const contractAddress = await fetchContractAddress(
+      contractName,
+      currentNetwork,
+    );
+
     if (!contractAddress) {
       throw new Error(`Contract address for ${contractName} not found`);
     }
@@ -275,7 +303,7 @@ export class ContractManager {
  */
 export const initializeContractManager = (): ContractManager => {
   const currentNetwork = config.defaultNetwork;
-  const networkConfig = config[currentNetwork];
+  const networkConfig = config.networks[currentNetwork];
 
   if (!networkConfig) {
     logError(`No configuration found for network: ${currentNetwork}`);

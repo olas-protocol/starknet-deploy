@@ -9,6 +9,29 @@ jest.mock('toml', () => ({
   parse: jest.fn(),
 }));
 
+jest.mock('../config', () => ({
+  __esModule: true,
+  default: {
+    defaultNetwork: 'testnet',
+    networks: {
+      testnet: {
+        rpcUrl: 'http://localhost:5050',
+        accounts: ['0x123'],
+        addresses: ['0x456'],
+      },
+      sepolia: {
+        rpcUrl: 'http://localhost:5050',
+        accounts: ['0x123'],
+        addresses: ['0x456'],
+      },
+    },
+    paths: {
+      contractClasses: 'target/dev',
+      scripts: 'src/scripts',
+    },
+  },
+}));
+
 // Mock fs
 jest.mock('fs', () => ({
   promises: {
@@ -40,26 +63,6 @@ describe('FileUtils', () => {
     it('should create directory if it does not exist', async () => {
       await fileUtils.ensureDirectoryExists('test/dir');
       expect(fs.mkdir).toHaveBeenCalledWith('test/dir', { recursive: true });
-    });
-  });
-
-  describe('fetchContractAddress', () => {
-    it('should return contract address from json file', async () => {
-      (fs.readFile as jest.Mock).mockResolvedValue(
-        JSON.stringify({ TestContract: '0x123' }) as never,
-      );
-
-      const address = await fileUtils.fetchContractAddress('TestContract');
-      expect(address).toBe('0x123');
-    });
-
-    it('should throw error if contract not found', async () => {
-      (fs.readFile as jest.Mock).mockResolvedValue('{}' as never);
-
-      const address = await fileUtils.fetchContractAddress(
-        'NonExistentContract',
-      );
-      expect(address).toBeUndefined();
     });
   });
 
@@ -134,12 +137,75 @@ describe('FileUtils', () => {
       await expect(fileUtils.getCompiledCode('TestContract')).rejects.toThrow();
     });
   });
+
+  describe('fetchContractAddress', () => {
+    it('should return contract address from json file', async () => {
+      const mockPath = path.join(
+        process.cwd(),
+        'src/scripts/deployments/testnet',
+        'deployed_contract_addresses.json',
+      );
+
+      (fs.readFile as jest.Mock).mockImplementation((filePath) => {
+        expect(filePath).toBe(mockPath);
+        return Promise.resolve(JSON.stringify({ TestContract: '0x123' }));
+      });
+
+      const address = await fileUtils.fetchContractAddress(
+        'TestContract',
+        'testnet',
+      );
+      expect(address).toBe('0x123');
+      expect(fs.readFile).toHaveBeenCalledWith(mockPath, 'utf8');
+    });
+
+    it('should return undefined if contract not found in the file', async () => {
+      const mockPath = path.join(
+        process.cwd(),
+        'src/scripts/deployments/testnet',
+        'deployed_contract_addresses.json',
+      );
+
+      (fs.readFile as jest.Mock).mockImplementation((filePath) => {
+        expect(filePath).toBe(mockPath);
+        return Promise.resolve(JSON.stringify({ AnotherContract: '0x456' }));
+      });
+
+      const contractName = 'NonExistentContract';
+      const address = await fileUtils.fetchContractAddress(
+        contractName,
+        'testnet',
+      );
+      expect(address).toBeUndefined();
+      expect(fs.readFile).toHaveBeenCalledWith(mockPath, 'utf8');
+    });
+
+    it('should handle different networks correctly', async () => {
+      const mockMainnetPath = path.join(
+        process.cwd(),
+        'src/scripts/deployments/mainnet',
+        'deployed_contract_addresses.json',
+      );
+
+      (fs.readFile as jest.Mock).mockImplementation((filePath) => {
+        expect(filePath).toBe(mockMainnetPath);
+        return Promise.resolve(JSON.stringify({ TestContract: '0xabc' }));
+      });
+
+      const address = await fileUtils.fetchContractAddress(
+        'TestContract',
+        'mainnet',
+      );
+      expect(address).toBe('0xabc');
+      expect(fs.readFile).toHaveBeenCalledWith(mockMainnetPath, 'utf8');
+    });
+  });
   describe('saveContractAddress', () => {
     it('should save contract address to json file', async () => {
       const mockReadFile = fs.readFile as jest.Mock;
       mockReadFile.mockResolvedValue('{}' as never);
 
-      await fileUtils.saveContractAddress('TestContract', '0x123');
+      await fileUtils.saveContractAddress('TestContract', '0x123', 'testnet');
 
       expect(fs.writeFile).toHaveBeenCalledWith(
         expect.stringContaining('deployed_contract_addresses.json'),
@@ -150,7 +216,7 @@ describe('FileUtils', () => {
       (fs.readFile as jest.Mock).mockResolvedValue(
         '{"ExistingContract": "0x456"}' as never,
       );
-      await fileUtils.saveContractAddress('TestContract', '0x123');
+      await fileUtils.saveContractAddress('TestContract', '0x123', 'testnet');
       expect(fs.writeFile).toHaveBeenCalledWith(
         expect.any(String),
         expect.stringContaining('"ExistingContract": "0x456"'),
@@ -163,33 +229,39 @@ describe('FileUtils', () => {
       jest.clearAllMocks();
     });
 
-    it('should create project structure with required directories and files', async () => {
+    it('should create project structure using paths from config', async () => {
+      // Get direct reference to the mocked config
+      const mockConfig = require('../config').default;
       const mockMkdir = fs.mkdir as jest.Mock;
       const mockWriteFile = fs.writeFile as jest.Mock;
       const projectRoot = process.cwd();
 
       await fileUtils.createProjectStructure();
 
-      // Verify directories creation
+      // Verify directories are created using config paths
       expect(mockMkdir).toHaveBeenCalledWith(
-        path.join(projectRoot, 'src', 'scripts', 'deployments'),
+        path.join(projectRoot, mockConfig.paths.scripts, 'deployments'),
         { recursive: true },
       );
       expect(mockMkdir).toHaveBeenCalledWith(
-        path.join(projectRoot, 'src', 'scripts', 'tasks'),
+        path.join(projectRoot, mockConfig.paths.scripts, 'tasks'),
         { recursive: true },
       );
 
-      // Verify example task and deployment file creation
+      // Verify example files are created at config-specified paths
       expect(mockWriteFile).toHaveBeenCalledWith(
-        path.join(projectRoot, 'src', 'scripts', 'tasks', 'example_task.ts'),
+        path.join(
+          projectRoot,
+          mockConfig.paths.scripts,
+          'tasks',
+          'example_task.ts',
+        ),
         fileUtils.exampleTaskContent,
       );
       expect(mockWriteFile).toHaveBeenCalledWith(
         path.join(
           projectRoot,
-          'src',
-          'scripts',
+          mockConfig.paths.scripts,
           'deployments',
           'example_deployment.ts',
         ),

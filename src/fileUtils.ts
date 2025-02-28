@@ -39,14 +39,19 @@ export async function ensureFileExists(filePath: string): Promise<void> {
 export async function saveContractAddress(
   contractName: string,
   contractAddress: string,
+  network: string,
 ) {
+  const networkDeploymentDir = path.join(deploymentsDir, network);
   const filePath = path.join(
     projectRoot,
-    deploymentsDir,
+    networkDeploymentDir,
     'deployed_contract_addresses.json',
   );
+  console.log('File path---------:', filePath);
   try {
+    await ensureDirectoryExists(path.join(projectRoot, deploymentsDir));
     await ensureFileExists(filePath);
+
     const data = await fs.readFile(filePath, 'utf8');
     const jsonData = data.trim() ? JSON.parse(data) : {};
     jsonData[contractName] = contractAddress;
@@ -61,12 +66,15 @@ export async function saveContractAddress(
 // Fetches contract address from JSON file
 export async function fetchContractAddress(
   contractName: string,
+  network: string,
 ): Promise<string | undefined> {
+  const networkDeploymentDir = path.join(deploymentsDir, network);
   const filePath = path.join(
     projectRoot,
-    deploymentsDir,
+    networkDeploymentDir,
     'deployed_contract_addresses.json',
   );
+
   try {
     const data = await fs.readFile(filePath, 'utf8');
     const jsonData = JSON.parse(data);
@@ -138,11 +146,11 @@ export async function createProjectStructure() {
     // Create scripts directory and its subdirectories
     await ensureDirectoryExists(path.join(projectRoot, deploymentsDir));
     await ensureDirectoryExists(path.join(projectRoot, tasksDir));
-    console.log('Creating example task file');
+    logInfo('Creating example task file');
 
     // Create example task file
     const exampleTaskPath = path.join(projectRoot, tasksDir, 'example_task.ts');
-    console.log('Example task path:', exampleTaskPath);
+    logInfo(`Example task path: ${exampleTaskPath}`);
 
     await fs.writeFile(exampleTaskPath, exampleTaskContent);
 
@@ -175,7 +183,7 @@ export async function createProjectStructure() {
 // Example deployment script content
 export const exampleDeploymentScript = `
 import "dotenv/config";
-import { initializeContractManager } from "starknet-deploy/dist/index";
+import { initializeContractManager } from "starknet-deploy";
 
 async function main() {
   const contractManager = initializeContractManager();
@@ -195,7 +203,7 @@ main()
 
 // Example task content
 export const exampleTaskContent = `
-import { initializeContractManager } from "starknet-deploy/dist/index";
+import { initializeContractManager } from "starknet-deploy";
 import { Command } from 'commander';
 
 async function main() {
@@ -230,17 +238,27 @@ const LOGO = `
 `;
 
 // Default configuration file content that will be created during init
-export const defaultConfigContent = `module.exports = {
-  defaultNetwork: 'sepolia',
-  sepolia: {
-    rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
-    accounts: ['<privateKey1>'],
-    addresses: ['<address1>'],
+export const defaultConfigContent = `import { StarknetDeployConfig } from 'starknet-deploy';
+
+const config: StarknetDeployConfig = {
+  defaultNetwork: "sepolia",
+  networks: {
+    sepolia: {
+      rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
+      accounts: ['<privateKey1>'],
+      addresses: ['<address1>'],
+    },
+    local: {
+      rpcUrl: 'http://localhost:5050',
+      accounts: [],
+      addresses: []
+    }
   },
   paths: {
     contractClasses: 'target/dev',
-    deploymentScripts: 'src/scripts/deployments',
-    taskScripts: 'src/scripts/tasks'
-  },
+    scripts: 'src/scripts',
+  }
 };
+
+export default config;
 `;

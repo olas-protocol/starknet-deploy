@@ -4,6 +4,6 @@ npm run format
 
 # Run JS tests
 echo "Running JS tests..."
-#npm test
+npm test
 
 git update-index --again
