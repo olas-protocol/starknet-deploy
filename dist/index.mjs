@@ -17,7 +17,7 @@ import {
   logSuccess,
   logWarn,
   saveContractAddress,
-} from './chunk-VF4GRXHB.mjs';
+} from './chunk-LLASYORO.mjs';
 export {
   ContractManager,
   createProjectStructure,

@@ -5,7 +5,7 @@ import {
   __toESM,
   createProjectStructure,
   init_esm_shims,
-} from './chunk-VF4GRXHB.mjs';
+} from './chunk-LLASYORO.mjs';
 
 // node_modules/commander/lib/error.js
 var require_error = __commonJS({

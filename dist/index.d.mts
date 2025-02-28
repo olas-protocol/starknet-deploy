@@ -125,7 +125,7 @@ declare const exampleDeploymentScript =
 declare const exampleTaskContent =
   "\nimport { initializeContractManager } from \"starknet-deploy\";\nimport { Command } from 'commander';\n\nasync function main() {\n\n  const program = new Command();\n  program\n    .requiredOption('-c, --param <param_type>', 'Param definition')\n\n  program.parse(process.argv);\n  const options = program.opts();\n}\n\nmain().catch((error) => {\n  console.error(error);\n  process.exit(1);\n});";
 declare const defaultConfigContent =
-  "import { StarknetDeployConfig } from 'starknet-deploy';\n\nconst config: StarknetDeployConfig = {\n  defaultNetwork: \"sepolia\",\n  networks: {\n    sepolia: {\n      rpcUrl: 'https://starknet-sepolia.public.blastapi.io',\n      accounts: ['<privateKey1>'],\n      addresses: ['<address1>'],\n    },\n    local: {\n      rpcUrl: 'http://localhost:5050',\n      accounts: [],\n      addresses: []\n    }\n  },\n  paths: {\n    root: process.cwd(),\n    contractClasses: 'target/dev',\n    scripts: 'src/scripts',\n  }\n};\n\nexport default config;\n";
+  "import { StarknetDeployConfig } from 'starknet-deploy';\n\nconst config: StarknetDeployConfig = {\n  defaultNetwork: \"sepolia\",\n  networks: {\n    sepolia: {\n      rpcUrl: 'https://starknet-sepolia.public.blastapi.io',\n      accounts: ['<privateKey1>'],\n      addresses: ['<address1>'],\n    },\n    local: {\n      rpcUrl: 'http://localhost:5050',\n      accounts: [],\n      addresses: []\n    }\n  },\n  paths: {\n    root: process.cwd(),\n    package_name: 'test_project', // cairo package name\n    contractClasses: 'target/dev',\n    scripts: 'src/scripts',\n  }\n};\n\nexport default config;\n";
 
 declare function logInfo(message: string): void;
 declare function logWarn(message: string): void;
@@ -149,6 +149,12 @@ interface StarknetDeployConfig {
   networks: NetworksConfig;
   paths: ProjectPathsConfig;
 }
+/**
+ * @property package_name - Optional package name for the cairo project
+ * @property root - Optional root directory of the project (defaults to current directory)
+ * @property contractClasses - Directory where compiled contract classes are stored
+ * @property scripts - Directory containing deployment and task scripts
+ */
 interface ProjectPathsConfig {
   package_name?: string;
   root?: string;

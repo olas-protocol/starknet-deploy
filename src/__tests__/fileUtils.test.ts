@@ -66,6 +66,7 @@ describe('FileUtils', () => {
       const projectRoot = process.cwd();
 
       // Get the package name from the mock config
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { paths } = require('../config').default;
       const mockPackageName = paths.package_name;
 
@@ -201,6 +202,7 @@ describe('FileUtils', () => {
 
     it('should create project structure using paths from config', async () => {
       // Get direct reference to the mocked config
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const mockConfig = require('../config').default;
       const mockMkdir = fs.mkdir as jest.Mock;
       const mockWriteFile = fs.writeFile as jest.Mock;

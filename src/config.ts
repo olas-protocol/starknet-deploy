@@ -10,7 +10,7 @@ if (!existsSync(configPath)) {
   );
 }
 
-// Change the require to a dynamic import
+//eslint-disable-next-line @typescript-eslint/no-require-imports
 const loadedConfig = require(configPath);
 const config: StarknetDeployConfig = loadedConfig.default || loadedConfig;
 

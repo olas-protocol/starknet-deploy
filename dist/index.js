@@ -330,6 +330,7 @@ const config: StarknetDeployConfig = {
   },
   paths: {
     root: process.cwd(),
+    package_name: 'test_project', // cairo package name
     contractClasses: 'target/dev',
     scripts: 'src/scripts',
   }
