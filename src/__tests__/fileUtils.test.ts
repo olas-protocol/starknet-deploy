@@ -1,13 +1,7 @@
 import { promises as fs } from 'fs';
 import * as fileUtils from '../fileUtils';
 import { describe, expect, beforeEach, it, jest } from '@jest/globals';
-import toml from 'toml';
 import path from 'path';
-
-// Mock toml
-jest.mock('toml', () => ({
-  parse: jest.fn(),
-}));
 
 jest.mock('../config', () => ({
   __esModule: true,
@@ -26,6 +20,8 @@ jest.mock('../config', () => ({
       },
     },
     paths: {
+      package_name: 'test_project',
+      root: process.cwd(),
       contractClasses: 'target/dev',
       scripts: 'src/scripts',
     },
@@ -52,11 +48,6 @@ describe('FileUtils', () => {
     (fs.readFile as jest.Mock).mockResolvedValue(
       '[package]\nname = "test_project"' as never,
     );
-
-    // 3. Mock toml parser
-    (toml.parse as jest.Mock).mockReturnValue({
-      package: { name: 'test_project' },
-    });
   });
 
   describe('ensureDirectoryExists', () => {
@@ -66,37 +57,24 @@ describe('FileUtils', () => {
     });
   });
 
-  describe('getPackageName', () => {
-    it('should return package name from Scarb.toml', async () => {
-      const packageName = await fileUtils.getPackageName();
-      expect(packageName).toBe('test_project');
-    });
-
-    it('should throw error if Scarb.toml is invalid', async () => {
-      (fs.readFile as jest.Mock).mockRejectedValue(
-        new Error('File not found') as never,
-      );
-
-      await expect(fileUtils.getPackageName()).rejects.toThrow(
-        'File not found',
-      );
-    });
-  });
   describe('getCompiledCode', () => {
     it('should return sierra and casm code', async () => {
       // Setup mock data
       const mockSierra = { sierra: 'code' };
       const mockCasm = { casm: 'code' };
-      const mockPackageName = 'test_project';
       const contractName = 'ERC20';
       const projectRoot = process.cwd();
-      // Setup file paths
+
+      // Get the package name from the mock config
+      const { paths } = require('../config').default;
+      const mockPackageName = paths.package_name;
+
+      // Setup file paths based on config values
       const sierraFilePath = path.join(
         projectRoot,
         'target/dev',
         `${mockPackageName}_${contractName}.contract_class.json`,
       );
-      const scarbPath = path.join(projectRoot, 'Scarb.toml');
 
       const casmFilePath = path.join(
         projectRoot,
@@ -104,23 +82,15 @@ describe('FileUtils', () => {
         `${mockPackageName}_${contractName}.compiled_contract_class.json`,
       );
 
-      //Mock Implementation
+      // Mock Implementation
       (fs.readFile as jest.Mock).mockImplementation((filePath: unknown) => {
-        switch (filePath) {
-          case scarbPath:
-            return Promise.resolve('[package]\nname = `${mockPackageName}`');
-          case sierraFilePath:
-            return Promise.resolve(Buffer.from(JSON.stringify(mockSierra)));
-          case casmFilePath:
-            return Promise.resolve(Buffer.from(JSON.stringify(mockCasm)));
-          default:
-            return Promise.reject(
-              new Error(`Unexpected file path: ${filePath}`),
-            );
+        if (filePath === sierraFilePath) {
+          return Promise.resolve(Buffer.from(JSON.stringify(mockSierra)));
+        } else if (filePath === casmFilePath) {
+          return Promise.resolve(Buffer.from(JSON.stringify(mockCasm)));
+        } else {
+          return Promise.reject(new Error(`Unexpected file path: ${filePath}`));
         }
-      });
-      (toml.parse as jest.Mock).mockReturnValue({
-        package: { name: mockPackageName },
       });
 
       const code = await fileUtils.getCompiledCode(contractName);

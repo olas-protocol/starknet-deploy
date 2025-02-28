@@ -9,7 +9,7 @@ import {
   exampleTaskContent,
   fetchContractAddress,
   getCompiledCode,
-  getPackageName,
+  getNetworkDeploymentPath,
   initializeContractManager,
   logDeploymentDetails,
   logError,
@@ -17,7 +17,7 @@ import {
   logSuccess,
   logWarn,
   saveContractAddress,
-} from './chunk-5QCJQNOS.mjs';
+} from './chunk-ME2IRQVM.mjs';
 export {
   ContractManager,
   createProjectStructure,
@@ -28,7 +28,7 @@ export {
   exampleTaskContent,
   fetchContractAddress,
   getCompiledCode,
-  getPackageName,
+  getNetworkDeploymentPath,
   initializeContractManager,
   logDeploymentDetails,
   logError,

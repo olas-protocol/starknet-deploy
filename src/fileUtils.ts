@@ -1,12 +1,11 @@
 import { promises as fs, existsSync } from 'fs';
 import path from 'path';
-import toml from 'toml';
 import { logSuccess, logError } from './logger';
 import { logInfo } from './logger';
 import config from './config';
 
-const projectRoot = process.cwd();
-
+const projectRoot = config.paths.root || process.cwd();
+const packageName = config.paths.package_name || '';
 const scriptsDir = config.paths.scripts || 'src/scripts';
 const deploymentsDir = `${scriptsDir}/deployments`;
 const tasksDir = `${scriptsDir}/tasks`;
@@ -30,6 +29,15 @@ export async function ensureFileExists(filePath: string): Promise<void> {
   }
 }
 
+export function getNetworkDeploymentPath(network: string): string {
+  return path.join(
+    projectRoot,
+    deploymentsDir,
+    network,
+    'deployed_contract_addresses.json',
+  );
+}
+
 /**
  * Saves a contract address to the deployed_contract_addresses.json file.
  *
@@ -41,13 +49,7 @@ export async function saveContractAddress(
   contractAddress: string,
   network: string,
 ) {
-  const networkDeploymentDir = path.join(deploymentsDir, network);
-  const filePath = path.join(
-    projectRoot,
-    networkDeploymentDir,
-    'deployed_contract_addresses.json',
-  );
-  console.log('File path---------:', filePath);
+  const filePath = getNetworkDeploymentPath(network);
   try {
     await ensureDirectoryExists(path.join(projectRoot, deploymentsDir));
     await ensureFileExists(filePath);
@@ -68,32 +70,13 @@ export async function fetchContractAddress(
   contractName: string,
   network: string,
 ): Promise<string | undefined> {
-  const networkDeploymentDir = path.join(deploymentsDir, network);
-  const filePath = path.join(
-    projectRoot,
-    networkDeploymentDir,
-    'deployed_contract_addresses.json',
-  );
-
+  const filePath = getNetworkDeploymentPath(network);
   try {
     const data = await fs.readFile(filePath, 'utf8');
     const jsonData = JSON.parse(data);
     return jsonData[contractName];
   } catch (error) {
     logError(`Error fetching contract address:, ${error}`);
-    throw error;
-  }
-}
-
-// Retrieves package name from Scarb.toml
-export async function getPackageName(): Promise<string> {
-  const tomlPath = path.join(projectRoot, 'Scarb.toml');
-  try {
-    const tomlData = await fs.readFile(tomlPath, 'utf8');
-    const parsedToml = toml.parse(tomlData);
-    return parsedToml.package.name;
-  } catch (error) {
-    logError(`Error reading Scarb.toml:, ${error}`);
     throw error;
   }
 }
@@ -105,7 +88,6 @@ export async function getPackageName(): Promise<string> {
  * @returns am object containing the Sierra and CASM code.
  */
 export async function getCompiledCode(contractName: string) {
-  const packageName = await getPackageName();
   const sierraFilePath = path.join(
     projectRoot,
     contractClassesDir,
@@ -137,11 +119,8 @@ export async function getCompiledCode(contractName: string) {
  */
 export async function createProjectStructure() {
   try {
-    console.log('fetching package name');
-    const packageName = await getPackageName();
-    console.log('Package name:', packageName);
     console.log(LOGO);
-    logInfo(`Initializing project structure for ${packageName}...`);
+    logInfo(`Initializing project structure ...`);
 
     // Create scripts directory and its subdirectories
     await ensureDirectoryExists(path.join(projectRoot, deploymentsDir));

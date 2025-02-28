@@ -49,7 +49,7 @@ __export(src_exports, {
   exampleTaskContent: () => exampleTaskContent,
   fetchContractAddress: () => fetchContractAddress,
   getCompiledCode: () => getCompiledCode,
-  getPackageName: () => getPackageName,
+  getNetworkDeploymentPath: () => getNetworkDeploymentPath,
   initializeContractManager: () => initializeContractManager,
   logDeploymentDetails: () => logDeploymentDetails,
   logError: () => logError,
@@ -66,7 +66,6 @@ var import_starknet = require('starknet');
 // src/fileUtils.ts
 var import_fs2 = require('fs');
 var import_path2 = __toESM(require('path'));
-var import_toml = __toESM(require('toml'));
 
 // src/logger.ts
 var import_colors = __toESM(require('colors'));
@@ -76,11 +75,11 @@ var import_path = __toESM(require('path'));
 var import_fs = require('fs');
 var configPath = import_path.default.join(
   process.cwd(),
-  'starknet-deploy.config.js',
+  'starknet-deploy.config.ts',
 );
 if (!(0, import_fs.existsSync)(configPath)) {
   throw new Error(
-    'Configuration file(starknet-deploy.config.js) not found. Please run `starknet-deploy init` to create one.',
+    'Configuration file(starknet-deploy.config.ts) not found. Please run `starknet-deploy init` to create one.',
   );
 }
 var config = require(configPath);
@@ -123,7 +122,8 @@ function logDeploymentDetails(contractName, classHash, contractAddress) {
 }
 
 // src/fileUtils.ts
-var projectRoot = process.cwd();
+var projectRoot = config_default.paths.root || process.cwd();
+var packageName = config_default.paths.package_name || '';
 var scriptsDir = config_default.paths.scripts || 'src/scripts';
 var deploymentsDir = `${scriptsDir}/deployments`;
 var tasksDir = `${scriptsDir}/tasks`;
@@ -143,13 +143,20 @@ async function ensureFileExists(filePath) {
     await import_fs2.promises.writeFile(filePath, JSON.stringify({}));
   }
 }
-async function saveContractAddress(contractName, contractAddress) {
-  const filePath = import_path2.default.join(
+function getNetworkDeploymentPath(network) {
+  return import_path2.default.join(
     projectRoot,
     deploymentsDir,
+    network,
     'deployed_contract_addresses.json',
   );
+}
+async function saveContractAddress(contractName, contractAddress, network) {
+  const filePath = getNetworkDeploymentPath(network);
   try {
+    await ensureDirectoryExists(
+      import_path2.default.join(projectRoot, deploymentsDir),
+    );
     await ensureFileExists(filePath);
     const data = await import_fs2.promises.readFile(filePath, 'utf8');
     const jsonData = data.trim() ? JSON.parse(data) : {};
@@ -164,12 +171,8 @@ async function saveContractAddress(contractName, contractAddress) {
     throw error;
   }
 }
-async function fetchContractAddress(contractName) {
-  const filePath = import_path2.default.join(
-    projectRoot,
-    deploymentsDir,
-    'deployed_contract_addresses.json',
-  );
+async function fetchContractAddress(contractName, network) {
+  const filePath = getNetworkDeploymentPath(network);
   try {
     const data = await import_fs2.promises.readFile(filePath, 'utf8');
     const jsonData = JSON.parse(data);
@@ -179,19 +182,7 @@ async function fetchContractAddress(contractName) {
     throw error;
   }
 }
-async function getPackageName() {
-  const tomlPath = import_path2.default.join(projectRoot, 'Scarb.toml');
-  try {
-    const tomlData = await import_fs2.promises.readFile(tomlPath, 'utf8');
-    const parsedToml = import_toml.default.parse(tomlData);
-    return parsedToml.package.name;
-  } catch (error) {
-    logError(`Error reading Scarb.toml:, ${error}`);
-    throw error;
-  }
-}
 async function getCompiledCode(contractName) {
-  const packageName = await getPackageName();
   const sierraFilePath = import_path2.default.join(
     projectRoot,
     contractClassesDir,
@@ -214,24 +205,21 @@ async function getCompiledCode(contractName) {
 }
 async function createProjectStructure() {
   try {
-    console.log('fetching package name');
-    const packageName = await getPackageName();
-    console.log('Package name:', packageName);
     console.log(LOGO);
-    logInfo(`Initializing project structure for ${packageName}...`);
+    logInfo(`Initializing project structure ...`);
     await ensureDirectoryExists(
       import_path2.default.join(projectRoot, deploymentsDir),
     );
     await ensureDirectoryExists(
       import_path2.default.join(projectRoot, tasksDir),
     );
-    console.log('Creating example task file');
+    logInfo('Creating example task file');
     const exampleTaskPath = import_path2.default.join(
       projectRoot,
       tasksDir,
       'example_task.ts',
     );
-    console.log('Example task path:', exampleTaskPath);
+    logInfo(`Example task path: ${exampleTaskPath}`);
     await import_fs2.promises.writeFile(exampleTaskPath, exampleTaskContent);
     const exampleDeploymentPath = import_path2.default.join(
       projectRoot,
@@ -265,7 +253,7 @@ Next steps:
 }
 var exampleDeploymentScript = `
 import "dotenv/config";
-import { initializeContractManager } from "starknet-deploy/dist/index";
+import { initializeContractManager } from "starknet-deploy";
 
 async function main() {
   const contractManager = initializeContractManager();
@@ -283,7 +271,7 @@ main()
   });
 `;
 var exampleTaskContent = `
-import { initializeContractManager } from "starknet-deploy/dist/index";
+import { initializeContractManager } from "starknet-deploy";
 import { Command } from 'commander';
 
 async function main() {
@@ -315,19 +303,29 @@ var LOGO = `
 \u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2551     \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D   \u2588\u2588\u2551                     
 \u255A\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u255D     \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u255D    \u255A\u2550\u255D                                       
 `;
-var defaultConfigContent = `module.exports = {
-  defaultNetwork: 'sepolia',
-  sepolia: {
-    rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
-    accounts: ['<privateKey1>'],
-    addresses: ['<address1>'],
+var defaultConfigContent = `import { StarknetDeployConfig } from 'starknet-deploy';
+
+const config: StarknetDeployConfig = {
+  defaultNetwork: "sepolia",
+  networks: {
+    sepolia: {
+      rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
+      accounts: ['<privateKey1>'],
+      addresses: ['<address1>'],
+    },
+    local: {
+      rpcUrl: 'http://localhost:5050',
+      accounts: [],
+      addresses: []
+    }
   },
   paths: {
     contractClasses: 'target/dev',
-    deploymentScripts: 'src/scripts/deployments',
-    taskScripts: 'src/scripts/tasks'
-  },
+    scripts: 'src/scripts',
+  }
 };
+
+export default config;
 `;
 
 // src/common.ts
@@ -366,12 +364,27 @@ var ContractManager = class {
    */
   updateAccount(accountIndex) {
     const currentNetwork = config_default.defaultNetwork;
-    const networkConfig = config_default[currentNetwork];
+    const networkConfig = config_default.networks[currentNetwork];
+    if (!networkConfig) {
+      throw new Error(
+        `Network configuration not found for network: ${currentNetwork}`,
+      );
+    }
     if (accountIndex < 0 || accountIndex >= networkConfig.accounts.length) {
       throw new Error(`Invalid account index provided: ${accountIndex}`);
     }
     const privateKey = networkConfig.accounts[accountIndex];
     const accountAddress = networkConfig.addresses[accountIndex];
+    if (!privateKey) {
+      throw new Error(
+        `Private key not found for account index: ${accountIndex}`,
+      );
+    }
+    if (!accountAddress) {
+      throw new Error(
+        `Account address not found for account index: ${accountIndex}`,
+      );
+    }
     this.account = new import_starknet.Account(
       this.provider,
       accountAddress,
@@ -389,8 +402,9 @@ var ContractManager = class {
    * @returns A promise that resolves when the deployment is complete.
    * @throws Will throw an error if the deployment fails.
    */
-  async deployContract(config2) {
-    const { contractName, constructorArgs } = config2;
+  async deployContract(deploymentConfig) {
+    const { contractName, constructorArgs } = deploymentConfig;
+    const currentNetwork = config_default.defaultNetwork;
     logInfo(
       `Deploying contract: ${contractName}, with initial args: ${JSON.stringify(constructorArgs, replacer, 2)}`,
     );
@@ -412,7 +426,11 @@ var ContractManager = class {
         deployResponse.declare.class_hash,
         deployResponse.deploy.address,
       );
-      await saveContractAddress(contractName, deployResponse.deploy.address);
+      await saveContractAddress(
+        contractName,
+        deployResponse.deploy.address,
+        currentNetwork,
+      );
     } catch (error) {
       logError(`Failed to deploy ${contractName} contract`);
       console.error(error);
@@ -426,7 +444,11 @@ var ContractManager = class {
    *
    */
   async getContractInstance(contractName) {
-    const contractAddress = await fetchContractAddress(contractName);
+    const currentNetwork = config_default.defaultNetwork;
+    const contractAddress = await fetchContractAddress(
+      contractName,
+      currentNetwork,
+    );
     if (!contractAddress) {
       throw new Error(`Contract address for ${contractName} not found`);
     }
@@ -561,7 +583,7 @@ Explorer URL: ${getExplorerUrl(successReceipt.transaction_hash)}`,
 };
 var initializeContractManager = () => {
   const currentNetwork = config_default.defaultNetwork;
-  const networkConfig = config_default[currentNetwork];
+  const networkConfig = config_default.networks[currentNetwork];
   if (!networkConfig) {
     logError(`No configuration found for network: ${currentNetwork}`);
     throw new Error();
@@ -586,7 +608,7 @@ var initializeContractManager = () => {
     exampleTaskContent,
     fetchContractAddress,
     getCompiledCode,
-    getPackageName,
+    getNetworkDeploymentPath,
     initializeContractManager,
     logDeploymentDetails,
     logError,

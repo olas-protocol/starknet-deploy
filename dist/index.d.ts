@@ -30,7 +30,7 @@ declare class ContractManager {
    * @returns A promise that resolves when the deployment is complete.
    * @throws Will throw an error if the deployment fails.
    */
-  deployContract(config: DeploymentConfig): Promise<void>;
+  deployContract(deploymentConfig: DeploymentConfig): Promise<void>;
   /**
    * Retrieves an instance of a deployed local contract.
    * @param contractName The name of the contract to be deployed.
@@ -88,6 +88,7 @@ declare const initializeContractManager: () => ContractManager;
 
 declare function ensureDirectoryExists(dirPath: string): Promise<void>;
 declare function ensureFileExists(filePath: string): Promise<void>;
+declare function getNetworkDeploymentPath(network: string): string;
 /**
  * Saves a contract address to the deployed_contract_addresses.json file.
  *
@@ -97,11 +98,12 @@ declare function ensureFileExists(filePath: string): Promise<void>;
 declare function saveContractAddress(
   contractName: string,
   contractAddress: string,
+  network: string,
 ): Promise<void>;
 declare function fetchContractAddress(
   contractName: string,
+  network: string,
 ): Promise<string | undefined>;
-declare function getPackageName(): Promise<string>;
 /**
  * Retrieves the compiled Sierra and CASM code for a given contract.
  *
@@ -119,11 +121,11 @@ declare function getCompiledCode(contractName: string): Promise<{
  */
 declare function createProjectStructure(): Promise<void>;
 declare const exampleDeploymentScript =
-  '\nimport "dotenv/config";\nimport { initializeContractManager } from "starknet-deploy/dist/index";\n\nasync function main() {\n  const contractManager = initializeContractManager();\n\n  await contractManager.deployContract({\n    contractName: "<contract_name>",\n  });\n}\n\nmain()\n  .then(() => process.exit(0))\n  .catch((error) => {\n    console.error(error);\n    process.exit(1);\n  });\n';
+  '\nimport "dotenv/config";\nimport { initializeContractManager } from "starknet-deploy";\n\nasync function main() {\n  const contractManager = initializeContractManager();\n\n  await contractManager.deployContract({\n    contractName: "<contract_name>",\n  });\n}\n\nmain()\n  .then(() => process.exit(0))\n  .catch((error) => {\n    console.error(error);\n    process.exit(1);\n  });\n';
 declare const exampleTaskContent =
-  "\nimport { initializeContractManager } from \"starknet-deploy/dist/index\";\nimport { Command } from 'commander';\n\nasync function main() {\n\n  const program = new Command();\n  program\n    .requiredOption('-c, --param <param_type>', 'Param definition')\n\n  program.parse(process.argv);\n  const options = program.opts();\n}\n\nmain().catch((error) => {\n  console.error(error);\n  process.exit(1);\n});";
+  "\nimport { initializeContractManager } from \"starknet-deploy\";\nimport { Command } from 'commander';\n\nasync function main() {\n\n  const program = new Command();\n  program\n    .requiredOption('-c, --param <param_type>', 'Param definition')\n\n  program.parse(process.argv);\n  const options = program.opts();\n}\n\nmain().catch((error) => {\n  console.error(error);\n  process.exit(1);\n});";
 declare const defaultConfigContent =
-  "module.exports = {\n  defaultNetwork: 'sepolia',\n  sepolia: {\n    rpcUrl: 'https://starknet-sepolia.public.blastapi.io',\n    accounts: ['<privateKey1>'],\n    addresses: ['<address1>'],\n  },\n  paths: {\n    contractClasses: 'target/dev',\n    deploymentScripts: 'src/scripts/deployments',\n    taskScripts: 'src/scripts/tasks'\n  },\n};\n";
+  "import { StarknetDeployConfig } from 'starknet-deploy';\n\nconst config: StarknetDeployConfig = {\n  defaultNetwork: \"sepolia\",\n  networks: {\n    sepolia: {\n      rpcUrl: 'https://starknet-sepolia.public.blastapi.io',\n      accounts: ['<privateKey1>'],\n      addresses: ['<address1>'],\n    },\n    local: {\n      rpcUrl: 'http://localhost:5050',\n      accounts: [],\n      addresses: []\n    }\n  },\n  paths: {\n    contractClasses: 'target/dev',\n    scripts: 'src/scripts',\n  }\n};\n\nexport default config;\n";
 
 declare function logInfo(message: string): void;
 declare function logWarn(message: string): void;
@@ -142,8 +144,32 @@ declare function logDeploymentDetails(
   contractAddress: string,
 ): void;
 
+interface StarknetDeployConfig {
+  defaultNetwork: string;
+  networks: NetworksConfig;
+  paths: ProjectPathsConfig;
+}
+interface ProjectPathsConfig {
+  package_name?: string;
+  root?: string;
+  contractClasses: string;
+  scripts: string;
+}
+interface NetworksConfig {
+  [networkName: string]: NetworkConfig;
+}
+interface NetworkConfig {
+  rpcUrl: string;
+  accounts: string[];
+  addresses: string[];
+}
+
 export {
   ContractManager,
+  type NetworkConfig,
+  type NetworksConfig,
+  type ProjectPathsConfig,
+  type StarknetDeployConfig,
   createProjectStructure,
   defaultConfigContent,
   ensureDirectoryExists,
@@ -152,7 +178,7 @@ export {
   exampleTaskContent,
   fetchContractAddress,
   getCompiledCode,
-  getPackageName,
+  getNetworkDeploymentPath,
   initializeContractManager,
   logDeploymentDetails,
   logError,

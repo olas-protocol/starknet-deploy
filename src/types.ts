@@ -5,6 +5,8 @@ export interface StarknetDeployConfig {
 }
 
 export interface ProjectPathsConfig {
+  package_name?: string;
+  root?: string;
   contractClasses: string;
   scripts: string;
 }

@@ -3607,7 +3607,6 @@ var import_starknet = require('starknet');
 init_cjs_shims();
 var import_fs2 = require('fs');
 var import_path2 = __toESM(require('path'));
-var import_toml = __toESM(require('toml'));
 
 // src/logger.ts
 init_cjs_shims();
@@ -3619,11 +3618,11 @@ var import_path = __toESM(require('path'));
 var import_fs = require('fs');
 var configPath = import_path.default.join(
   process.cwd(),
-  'starknet-deploy.config.js',
+  'starknet-deploy.config.ts',
 );
 if (!(0, import_fs.existsSync)(configPath)) {
   throw new Error(
-    'Configuration file(starknet-deploy.config.js) not found. Please run `starknet-deploy init` to create one.',
+    'Configuration file(starknet-deploy.config.ts) not found. Please run `starknet-deploy init` to create one.',
   );
 }
 var config = require(configPath);
@@ -3652,7 +3651,8 @@ function logSuccess(message) {
 }
 
 // src/fileUtils.ts
-var projectRoot = process.cwd();
+var projectRoot = config_default.paths.root || process.cwd();
+var packageName = config_default.paths.package_name || '';
 var scriptsDir = config_default.paths.scripts || 'src/scripts';
 var deploymentsDir = `${scriptsDir}/deployments`;
 var tasksDir = `${scriptsDir}/tasks`;
@@ -3666,37 +3666,23 @@ async function ensureDirectoryExists(dirPath) {
     throw error;
   }
 }
-async function getPackageName() {
-  const tomlPath = import_path2.default.join(projectRoot, 'Scarb.toml');
-  try {
-    const tomlData = await import_fs2.promises.readFile(tomlPath, 'utf8');
-    const parsedToml = import_toml.default.parse(tomlData);
-    return parsedToml.package.name;
-  } catch (error) {
-    logError(`Error reading Scarb.toml:, ${error}`);
-    throw error;
-  }
-}
 async function createProjectStructure() {
   try {
-    console.log('fetching package name');
-    const packageName = await getPackageName();
-    console.log('Package name:', packageName);
     console.log(LOGO);
-    logInfo(`Initializing project structure for ${packageName}...`);
+    logInfo(`Initializing project structure ...`);
     await ensureDirectoryExists(
       import_path2.default.join(projectRoot, deploymentsDir),
     );
     await ensureDirectoryExists(
       import_path2.default.join(projectRoot, tasksDir),
     );
-    console.log('Creating example task file');
+    logInfo('Creating example task file');
     const exampleTaskPath = import_path2.default.join(
       projectRoot,
       tasksDir,
       'example_task.ts',
     );
-    console.log('Example task path:', exampleTaskPath);
+    logInfo(`Example task path: ${exampleTaskPath}`);
     await import_fs2.promises.writeFile(exampleTaskPath, exampleTaskContent);
     const exampleDeploymentPath = import_path2.default.join(
       projectRoot,
@@ -3730,7 +3716,7 @@ Next steps:
 }
 var exampleDeploymentScript = `
 import "dotenv/config";
-import { initializeContractManager } from "starknet-deploy/dist/index";
+import { initializeContractManager } from "starknet-deploy";
 
 async function main() {
   const contractManager = initializeContractManager();
@@ -3748,7 +3734,7 @@ main()
   });
 `;
 var exampleTaskContent = `
-import { initializeContractManager } from "starknet-deploy/dist/index";
+import { initializeContractManager } from "starknet-deploy";
 import { Command } from 'commander';
 
 async function main() {
@@ -3782,6 +3768,9 @@ var LOGO = `
 `;
 
 // src/common.ts
+init_cjs_shims();
+
+// src/types.ts
 init_cjs_shims();
 
 // src/cli.ts
