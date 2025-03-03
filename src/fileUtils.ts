@@ -41,8 +41,8 @@ export async function getNetworkDeploymentPath(
   return path.join(
     config.paths.root || process.cwd(),
     'src',
-    'deployments',
     'scripts',
+    'deployments',
     network,
     'deployed_contract_addresses.json',
   );
