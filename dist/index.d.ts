@@ -19,9 +19,9 @@ declare class ContractManager {
   constructor(rpcEndpoint: string, privateKey: string, accountAddress: string);
   /**
    * Updates the account used for contract deployment and interaction.
-   * @param accountIndex The index of the account in the configuration.
+   * @param accountOrIndex The account object or index of the account in the configuration.
    */
-  updateAccount(accountIndex: number): Promise<void>;
+  updateAccount(accountOrIndex: Account | number): Promise<void>;
   /**
    * Deploys a contract with the given configuration.
    *

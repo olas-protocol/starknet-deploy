@@ -35,9 +35,17 @@ export class ContractManager {
 
   /**
    * Updates the account used for contract deployment and interaction.
-   * @param accountIndex The index of the account in the configuration.
+   * @param accountOrIndex The account object or index of the account in the configuration.
    */
-  async updateAccount(accountIndex: number): Promise<void> {
+  async updateAccount(accountOrIndex: Account | number): Promise<void> {
+    if (accountOrIndex instanceof Account) {
+      // If an Account object is provided, set it directly
+      this.account = accountOrIndex;
+      logInfo(`Switched to account with address: ${accountOrIndex.address}`);
+      return;
+    }
+    // Handle account index case
+    const accountIndex = accountOrIndex;
     const config = await loadConfigFile();
     const currentNetwork = config.defaultNetwork;
     const networkConfig = config.networks[currentNetwork];

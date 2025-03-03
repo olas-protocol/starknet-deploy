@@ -137,7 +137,9 @@ async function getNetworkDeploymentPath(network) {
   const config = await loadConfigFile();
   return import_path.default.join(
     config.paths.root || process.cwd(),
+    'src',
     'deployments',
+    'scripts',
     network,
     'deployed_contract_addresses.json',
   );
@@ -406,9 +408,15 @@ var ContractManager = class {
   }
   /**
    * Updates the account used for contract deployment and interaction.
-   * @param accountIndex The index of the account in the configuration.
+   * @param accountOrIndex The account object or index of the account in the configuration.
    */
-  async updateAccount(accountIndex) {
+  async updateAccount(accountOrIndex) {
+    if (accountOrIndex instanceof import_starknet.Account) {
+      this.account = accountOrIndex;
+      logInfo(`Switched to account with address: ${accountOrIndex.address}`);
+      return;
+    }
+    const accountIndex = accountOrIndex;
     const config = await loadConfigFile();
     const currentNetwork = config.defaultNetwork;
     const networkConfig = config.networks[currentNetwork];
