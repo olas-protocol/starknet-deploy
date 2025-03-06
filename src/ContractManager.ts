@@ -84,11 +84,11 @@ export class ContractManager {
    *
    * @param contractName The name of the contract to be deployed
    * @param constructorArgs Optional constructor arguments for the contract
-   * @returns A promise that resolves when the deployment is complete.
+   * @returns deployed contract address
    * @throws Will throw an error if the deployment fails.
    */
 
-  async deployContract(deploymentConfig: DeploymentConfig): Promise<void> {
+  async deployContract(deploymentConfig: DeploymentConfig): Promise<string> {
     const { contractName, constructorArgs } = deploymentConfig;
     const config = await loadConfigFile();
     const currentNetwork = config.defaultNetwork;
@@ -114,6 +114,7 @@ export class ContractManager {
       });
 
       logDeploymentDetails(
+        config.defaultNetwork,
         contractName,
         deployResponse.declare.class_hash,
         deployResponse.deploy.address,
@@ -123,6 +124,7 @@ export class ContractManager {
         deployResponse.deploy.address,
         currentNetwork,
       );
+      return deployResponse.deploy.address;
     } catch (error) {
       logError(`Failed to deploy ${contractName} contract`);
       console.error(error);
@@ -284,11 +286,12 @@ export class ContractManager {
     operationName: string,
   ): Promise<void> {
     const receiptTx = new ReceiptTx(receipt);
-
+    const config = await loadConfigFile();
+    const currentNetwork = config.defaultNetwork;
     receiptTx.match({
       success: (successReceipt) => {
         logSuccess(
-          `${operationName} transaction succeeded\nExplorer URL: ${getExplorerUrl(successReceipt.transaction_hash)}`,
+          `${operationName} transaction succeeded\nExplorer URL: ${getExplorerUrl(currentNetwork, successReceipt.transaction_hash)}`,
         );
       },
       reverted: (revertedReceipt) => {

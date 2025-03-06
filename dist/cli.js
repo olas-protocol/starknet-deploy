@@ -3611,6 +3611,11 @@ var import_path = __toESM(require('path'));
 // src/logger.ts
 init_cjs_shims();
 var import_colors = __toESM(require('colors'));
+
+// src/common.ts
+init_cjs_shims();
+
+// src/logger.ts
 function formatLog(level, message) {
   return `
 [${level}] ${message}`;
@@ -3818,9 +3823,6 @@ var defaultConfig = {
     scripts: 'src/scripts',
   },
 };
-
-// src/common.ts
-init_cjs_shims();
 
 // src/types.ts
 init_cjs_shims();

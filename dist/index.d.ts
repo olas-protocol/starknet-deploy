@@ -27,10 +27,10 @@ declare class ContractManager {
    *
    * @param contractName The name of the contract to be deployed
    * @param constructorArgs Optional constructor arguments for the contract
-   * @returns A promise that resolves when the deployment is complete.
+   * @returns deployed contract address
    * @throws Will throw an error if the deployment fails.
    */
-  deployContract(deploymentConfig: DeploymentConfig): Promise<void>;
+  deployContract(deploymentConfig: DeploymentConfig): Promise<string>;
   /**
    * Retrieves an instance of a deployed local contract.
    * @param contractName The name of the contract to be deployed.
@@ -172,6 +172,7 @@ declare function logSuccess(message: string): void;
  * @param contractAddress - The address of the deployed contract.
  */
 declare function logDeploymentDetails(
+  network: string,
   contractName: string,
   classHash: BigNumberish,
   contractAddress: string,

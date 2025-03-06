@@ -84,7 +84,33 @@ import path2 from 'path';
 // src/logger.ts
 init_esm_shims();
 import colors from 'colors';
-var explorerURL = `https://starkscan.co/`;
+
+// src/common.ts
+init_esm_shims();
+var explorerURL = `starkscan.co`;
+function getExplorerUrl(network, txHash) {
+  switch (network) {
+    case 'sepolia':
+      return `https://sepolia.${explorerURL}/tx/${txHash}`;
+    case 'mainnet':
+      return `https://${explorerURL}/tx/${txHash}`;
+    default:
+      return txHash;
+  }
+}
+function handleError(message) {
+  logError(message);
+  throw new Error(message);
+}
+function replacer(_, value) {
+  if (typeof value === 'bigint') {
+    return value.toString();
+  } else {
+    return value;
+  }
+}
+
+// src/logger.ts
 function formatLog(level, message) {
   return `
 [${level}] ${message}`;
@@ -101,12 +127,18 @@ function logError(message) {
 function logSuccess(message) {
   console.log(colors.green(formatLog('SUCCESS' /* SUCCESS */, message)));
 }
-function logDeploymentDetails(contractName, classHash, contractAddress) {
+function logDeploymentDetails(
+  network,
+  contractName,
+  classHash,
+  contractAddress,
+) {
+  const deploymentURL = `https://${network}.${explorerURL}/contract/${contractAddress}`;
   const deploymentMessage = `
     ${colors.green(`${contractName} Contract deployed successfully`)}
     ${colors.green(`Class Hash: ${classHash}`)}
     ${colors.green(`Contract Address: ${contractAddress}`)}
-    ${colors.green(`Explorer URL: ${explorerURL}/contract/${contractAddress}`)}
+    ${colors.green(`Explorer URL: ${deploymentURL}`)}
     `;
   logSuccess(deploymentMessage);
 }
@@ -364,25 +396,6 @@ var defaultConfig = {
   },
 };
 
-// src/common.ts
-init_esm_shims();
-function getExplorerUrl(txHash) {
-  return process.env.BLOCK_EXPLORER_URL
-    ? `${process.env.BLOCK_EXPLORER_URL}/tx/${txHash}`
-    : txHash;
-}
-function handleError(message) {
-  logError(message);
-  throw new Error(message);
-}
-function replacer(_, value) {
-  if (typeof value === 'bigint') {
-    return value.toString();
-  } else {
-    return value;
-  }
-}
-
 // src/ContractManager.ts
 var ContractManager = class {
   provider;
@@ -435,7 +448,7 @@ var ContractManager = class {
    *
    * @param contractName The name of the contract to be deployed
    * @param constructorArgs Optional constructor arguments for the contract
-   * @returns A promise that resolves when the deployment is complete.
+   * @returns deployed contract address
    * @throws Will throw an error if the deployment fails.
    */
   async deployContract(deploymentConfig) {
@@ -459,6 +472,7 @@ var ContractManager = class {
         salt: stark.randomAddress(),
       });
       logDeploymentDetails(
+        config.defaultNetwork,
         contractName,
         deployResponse.declare.class_hash,
         deployResponse.deploy.address,
@@ -468,6 +482,7 @@ var ContractManager = class {
         deployResponse.deploy.address,
         currentNetwork,
       );
+      return deployResponse.deploy.address;
     } catch (error) {
       logError(`Failed to deploy ${contractName} contract`);
       console.error(error);
@@ -593,11 +608,13 @@ var ContractManager = class {
   // Helper function to handle transaction receipt
   async handleTxReceipt(receipt, operationName) {
     const receiptTx = new ReceiptTx(receipt);
+    const config = await loadConfigFile();
+    const currentNetwork = config.defaultNetwork;
     receiptTx.match({
       success: (successReceipt) => {
         logSuccess(
           `${operationName} transaction succeeded
-Explorer URL: ${getExplorerUrl(successReceipt.transaction_hash)}`,
+Explorer URL: ${getExplorerUrl(currentNetwork, successReceipt.transaction_hash)}`,
         );
       },
       reverted: (revertedReceipt) => {

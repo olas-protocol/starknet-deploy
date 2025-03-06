@@ -1,12 +1,12 @@
 import colors from 'colors';
 import { BigNumberish } from 'starknet';
+import { explorerURL } from './common';
 enum LogLevel {
   INFO = 'INFO',
   WARN = 'WARN',
   ERROR = 'ERROR',
   SUCCESS = 'SUCCESS',
 }
-const explorerURL = `https://starkscan.co/`;
 
 // Format the log message
 function formatLog(level: LogLevel, message: string): string {
@@ -37,15 +37,17 @@ export function logSuccess(message: string) {
  */
 
 export function logDeploymentDetails(
+  network: string,
   contractName: string,
   classHash: BigNumberish,
   contractAddress: string,
 ) {
+  const deploymentURL = `https://${network}.${explorerURL}/contract/${contractAddress}`;
   const deploymentMessage = `
     ${colors.green(`${contractName} Contract deployed successfully`)}
     ${colors.green(`Class Hash: ${classHash}`)}
     ${colors.green(`Contract Address: ${contractAddress}`)}
-    ${colors.green(`Explorer URL: ${explorerURL}/contract/${contractAddress}`)}
+    ${colors.green(`Explorer URL: ${deploymentURL}`)}
     `;
   logSuccess(deploymentMessage);
 }
