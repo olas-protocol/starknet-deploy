@@ -6,6 +6,8 @@ import {
   Contract,
   GetTxReceiptResponseWithoutHelper,
   ReceiptTx,
+  Result,
+  ArgsOrCalldata,
 } from 'starknet';
 import {
   getCompiledCode,
@@ -30,7 +32,13 @@ export class ContractManager {
 
   constructor(rpcEndpoint: string, privateKey: string, accountAddress: string) {
     this.provider = new RpcProvider({ nodeUrl: rpcEndpoint });
-    this.account = new Account(this.provider, accountAddress, privateKey);
+    this.account = new Account(
+      this.provider,
+      accountAddress,
+      privateKey,
+      undefined,
+      '0x3',
+    );
   }
 
   /**
@@ -74,7 +82,13 @@ export class ContractManager {
       );
     }
 
-    this.account = new Account(this.provider, accountAddress, privateKey);
+    this.account = new Account(
+      this.provider,
+      accountAddress,
+      privateKey,
+      undefined,
+      '0x3',
+    );
     logInfo(
       `Switched to account index ${accountIndex}. New account address: ${accountAddress}`,
     );
@@ -126,9 +140,10 @@ export class ContractManager {
       );
       return deployResponse.deploy.address;
     } catch (error) {
-      logError(`Failed to deploy ${contractName} contract`);
-      console.error(error);
-      process.exit(1);
+      logError(
+        `Failed to deploy ${contractName} contract  with error: ${error}`,
+      );
+      throw error;
     }
   }
   /**
@@ -169,7 +184,7 @@ export class ContractManager {
    * @param contractAddress The address of the deployed contract.
    * @returns A connected Contract instance.
    */
-  async connectToDeployedContract(contractAddress: string): Promise<Contract> {
+  async getContractByAddress(contractAddress: string): Promise<Contract> {
     try {
       // Fetch the contract class at the given address
       const { abi: contractAbi } =
@@ -188,18 +203,71 @@ export class ContractManager {
         this.provider,
       );
 
-      // Connect the contract to the account for signing transactions
-      contract.connect(this.account);
-
       return contract;
     } catch (error) {
       logError(`Failed to connect to contract at address ${contractAddress}:`);
       throw error;
     }
   }
+
+  /**
+   * Checks if a string is a valid Starknet address
+   * @param value String to check
+   * @returns boolean indicating if the string is a Starknet address
+   */
+  public isStarknetAddress(value: string): boolean {
+    // Starknet addresses are 0x followed by a 64-character hex string
+    return /^0x[0-9a-fA-F]{63,64}$/.test(value);
+  }
+
+  /**
+   * Resolves a contract reference to a Contract instance.
+   * @param contractRef Contract instance, contract address string, or contract name
+   * @returns Promise resolving to a Contract instance
+   * @private
+   */
+  private async resolveContract(
+    contractRef: Contract | string,
+  ): Promise<Contract> {
+    if (typeof contractRef !== 'string') {
+      // It's already a Contract instance
+      return contractRef;
+    }
+    if (this.isStarknetAddress(contractRef)) {
+      // It's a contract address
+      return await this.getContractByAddress(contractRef);
+    } else {
+      // It's a contract name
+      return await this.getContractInstance(contractRef);
+    }
+  }
+
+  /**
+   * Calls a function on a deployed contract.
+   * @param contract Contract instance or contract address.
+   * @param functionName The name of the function to call on the contract.
+   * @param args The arguments for the function.
+   * @returns A promise that resolves with the
+   * @throws Will throw an error if the transaction fails.
+   */
+  async call(
+    contract: Contract | string,
+    functionName: string,
+    args: ArgsOrCalldata = [],
+  ): Promise<Result> {
+    const contractInstance = await this.resolveContract(contract);
+
+    try {
+      const response = await contractInstance.call(functionName, args);
+      return response;
+    } catch (error) {
+      logError(`An error occurred during call of ${functionName} function:`);
+      throw error;
+    }
+  }
   /**
    * Executes a function on a deployed contract.
-   * @param contract Contract instance or contract address.
+   * @param contract Contract name, contract instance, or contract address.
    * @param functionName The name of the function to call on the contract.
    * @param args The arguments for the function.
    * @param bufferPercentage - Optional. The percentage buffer to add to the max fee (default is 20%).
@@ -209,18 +277,10 @@ export class ContractManager {
   async executeTransaction(
     contract: Contract | string,
     functionName: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    args: any[] = [],
+    args: ArgsOrCalldata = [],
     bufferPercentage: number = 20,
   ): Promise<string> {
-    let contractInstance: Contract;
-    // Determine if contract is an instance or an address
-    if (typeof contract === 'string') {
-      // It's a contract address, connect to the deployed contract
-      contractInstance = await this.connectToDeployedContract(contract);
-    } else {
-      contractInstance = contract;
-    }
+    const contractInstance = await this.resolveContract(contract);
 
     // Estimate the fee for the function call
     const maxFee = await this.estimateMaxFee(
@@ -231,11 +291,9 @@ export class ContractManager {
     );
     try {
       // Execute the contract function
-      // @ts-expect-error - TODO: Fix this
-      const txResponse = await contractInstance.functions[functionName](
-        ...args,
-        { maxFee },
-      );
+      const txResponse = await contractInstance.invoke(functionName, args, {
+        maxFee,
+      });
       // Wait for the transaction to be mined
       const txReceipt = await this.provider.waitForTransaction(
         txResponse.transaction_hash,
@@ -245,9 +303,8 @@ export class ContractManager {
       return txResponse.transaction_hash;
     } catch (error) {
       logError(
-        `An error occurred during ${functionName} execution of ${functionName} function:`,
+        `An error occurred during execution of ${functionName} function`,
       );
-      console.error(error);
       throw error;
     }
   }

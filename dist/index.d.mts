@@ -2,6 +2,8 @@ import {
   RpcProvider,
   Account,
   Contract,
+  ArgsOrCalldata,
+  Result,
   GetTxReceiptResponseWithoutHelper,
   BigNumberish,
 } from 'starknet';
@@ -43,10 +45,36 @@ declare class ContractManager {
    * @param contractAddress The address of the deployed contract.
    * @returns A connected Contract instance.
    */
-  connectToDeployedContract(contractAddress: string): Promise<Contract>;
+  getContractByAddress(contractAddress: string): Promise<Contract>;
+  /**
+   * Checks if a string is a valid Starknet address
+   * @param value String to check
+   * @returns boolean indicating if the string is a Starknet address
+   */
+  isStarknetAddress(value: string): boolean;
+  /**
+   * Resolves a contract reference to a Contract instance.
+   * @param contractRef Contract instance, contract address string, or contract name
+   * @returns Promise resolving to a Contract instance
+   * @private
+   */
+  private resolveContract;
+  /**
+   * Calls a function on a deployed contract.
+   * @param contract Contract instance or contract address.
+   * @param functionName The name of the function to call on the contract.
+   * @param args The arguments for the function.
+   * @returns A promise that resolves with the
+   * @throws Will throw an error if the transaction fails.
+   */
+  call(
+    contract: Contract | string,
+    functionName: string,
+    args?: ArgsOrCalldata,
+  ): Promise<Result>;
   /**
    * Executes a function on a deployed contract.
-   * @param contract Contract instance or contract address.
+   * @param contract Contract name, contract instance, or contract address.
    * @param functionName The name of the function to call on the contract.
    * @param args The arguments for the function.
    * @param bufferPercentage - Optional. The percentage buffer to add to the max fee (default is 20%).
@@ -56,7 +84,7 @@ declare class ContractManager {
   executeTransaction(
     contract: Contract | string,
     functionName: string,
-    args?: any[],
+    args?: ArgsOrCalldata,
     bufferPercentage?: number,
   ): Promise<string>;
   /**

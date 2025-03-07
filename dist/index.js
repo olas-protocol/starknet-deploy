@@ -416,6 +416,8 @@ var ContractManager = class {
       this.provider,
       accountAddress,
       privateKey,
+      void 0,
+      '0x3',
     );
   }
   /**
@@ -456,6 +458,8 @@ var ContractManager = class {
       this.provider,
       accountAddress,
       privateKey,
+      void 0,
+      '0x3',
     );
     logInfo(
       `Switched to account index ${accountIndex}. New account address: ${accountAddress}`,
@@ -502,9 +506,10 @@ var ContractManager = class {
       );
       return deployResponse.deploy.address;
     } catch (error) {
-      logError(`Failed to deploy ${contractName} contract`);
-      console.error(error);
-      process.exit(1);
+      logError(
+        `Failed to deploy ${contractName} contract  with error: ${error}`,
+      );
+      throw error;
     }
   }
   /**
@@ -541,7 +546,7 @@ var ContractManager = class {
    * @param contractAddress The address of the deployed contract.
    * @returns A connected Contract instance.
    */
-  async connectToDeployedContract(contractAddress) {
+  async getContractByAddress(contractAddress) {
     try {
       const { abi: contractAbi } =
         await this.provider.getClassAt(contractAddress);
@@ -555,7 +560,6 @@ var ContractManager = class {
         contractAddress,
         this.provider,
       );
-      contract.connect(this.account);
       return contract;
     } catch (error) {
       logError(`Failed to connect to contract at address ${contractAddress}:`);
@@ -563,8 +567,50 @@ var ContractManager = class {
     }
   }
   /**
-   * Executes a function on a deployed contract.
+   * Checks if a string is a valid Starknet address
+   * @param value String to check
+   * @returns boolean indicating if the string is a Starknet address
+   */
+  isStarknetAddress(value) {
+    return /^0x[0-9a-fA-F]{63,64}$/.test(value);
+  }
+  /**
+   * Resolves a contract reference to a Contract instance.
+   * @param contractRef Contract instance, contract address string, or contract name
+   * @returns Promise resolving to a Contract instance
+   * @private
+   */
+  async resolveContract(contractRef) {
+    if (typeof contractRef !== 'string') {
+      return contractRef;
+    }
+    if (this.isStarknetAddress(contractRef)) {
+      return await this.getContractByAddress(contractRef);
+    } else {
+      return await this.getContractInstance(contractRef);
+    }
+  }
+  /**
+   * Calls a function on a deployed contract.
    * @param contract Contract instance or contract address.
+   * @param functionName The name of the function to call on the contract.
+   * @param args The arguments for the function.
+   * @returns A promise that resolves with the
+   * @throws Will throw an error if the transaction fails.
+   */
+  async call(contract, functionName, args = []) {
+    const contractInstance = await this.resolveContract(contract);
+    try {
+      const response = await contractInstance.call(functionName, args);
+      return response;
+    } catch (error) {
+      logError(`An error occurred during call of ${functionName} function:`);
+      throw error;
+    }
+  }
+  /**
+   * Executes a function on a deployed contract.
+   * @param contract Contract name, contract instance, or contract address.
    * @param functionName The name of the function to call on the contract.
    * @param args The arguments for the function.
    * @param bufferPercentage - Optional. The percentage buffer to add to the max fee (default is 20%).
@@ -577,12 +623,7 @@ var ContractManager = class {
     args = [],
     bufferPercentage = 20,
   ) {
-    let contractInstance;
-    if (typeof contract === 'string') {
-      contractInstance = await this.connectToDeployedContract(contract);
-    } else {
-      contractInstance = contract;
-    }
+    const contractInstance = await this.resolveContract(contract);
     const maxFee = await this.estimateMaxFee(
       contractInstance,
       functionName,
@@ -590,10 +631,9 @@ var ContractManager = class {
       bufferPercentage,
     );
     try {
-      const txResponse = await contractInstance.functions[functionName](
-        ...args,
-        { maxFee },
-      );
+      const txResponse = await contractInstance.invoke(functionName, args, {
+        maxFee,
+      });
       const txReceipt = await this.provider.waitForTransaction(
         txResponse.transaction_hash,
       );
@@ -601,9 +641,8 @@ var ContractManager = class {
       return txResponse.transaction_hash;
     } catch (error) {
       logError(
-        `An error occurred during ${functionName} execution of ${functionName} function:`,
+        `An error occurred during execution of ${functionName} function`,
       );
-      console.error(error);
       throw error;
     }
   }
