@@ -5,61 +5,42 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __require = /* @__PURE__ */ ((x) =>
-  typeof require !== 'undefined'
-    ? require
-    : typeof Proxy !== 'undefined'
-      ? new Proxy(x, {
-          get: (a, b) => (typeof require !== 'undefined' ? require : a)[b],
-        })
-      : x)(function (x) {
-  if (typeof require !== 'undefined') return require.apply(this, arguments);
+var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+}) : x)(function(x) {
+  if (typeof require !== "undefined") return require.apply(this, arguments);
   throw Error('Dynamic require of "' + x + '" is not supported');
 });
-var __esm = (fn, res) =>
-  function __init() {
-    return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])((fn = 0))), res;
-  };
-var __commonJS = (cb, mod) =>
-  function __require2() {
-    return (
-      mod ||
-        (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod),
-      mod.exports
-    );
-  };
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
+var __commonJS = (cb, mod) => function __require2() {
+  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+};
 var __copyProps = (to, from, except, desc) => {
-  if ((from && typeof from === 'object') || typeof from === 'function') {
+  if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
       if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, {
-          get: () => from[key],
-          enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
-        });
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
   }
   return to;
 };
-var __toESM = (mod, isNodeMode, target) => (
-  (target = mod != null ? __create(__getProtoOf(mod)) : {}),
-  __copyProps(
-    // If the importer is in node compatibility mode or this is not an ESM
-    // file that has been converted to a CommonJS file using a Babel-
-    // compatible transform (i.e. "__esModule" has not been set), then set
-    // "default" to the CommonJS "module.exports" for node compatibility.
-    isNodeMode || !mod || !mod.__esModule
-      ? __defProp(target, 'default', { value: mod, enumerable: true })
-      : target,
-    mod,
-  )
-);
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 
 // node_modules/tsup/assets/esm_shims.js
-import { fileURLToPath } from 'url';
-import path from 'path';
+import { fileURLToPath } from "url";
+import path from "path";
 var init_esm_shims = __esm({
-  'node_modules/tsup/assets/esm_shims.js'() {
-    'use strict';
-  },
+  "node_modules/tsup/assets/esm_shims.js"() {
+    "use strict";
+  }
 });
 
 // src/index.ts
@@ -68,31 +49,32 @@ init_esm_shims();
 // src/ContractManager.ts
 init_esm_shims();
 import {
+  getChecksumAddress,
   Account,
   RpcProvider,
   CallData,
   stark,
   Contract,
-  ReceiptTx,
-} from 'starknet';
+  ReceiptTx
+} from "starknet";
 
 // src/fileUtils.ts
 init_esm_shims();
-import { promises as fs, existsSync } from 'fs';
-import path2 from 'path';
+import { promises as fs, existsSync } from "fs";
+import path2 from "path";
 
 // src/logger.ts
 init_esm_shims();
-import colors from 'colors';
+import colors from "colors";
 
 // src/common.ts
 init_esm_shims();
 var explorerURL = `starkscan.co`;
 function getExplorerUrl(network, txHash) {
   switch (network) {
-    case 'sepolia':
+    case "sepolia":
       return `https://sepolia.${explorerURL}/tx/${txHash}`;
-    case 'mainnet':
+    case "mainnet":
       return `https://${explorerURL}/tx/${txHash}`;
     default:
       return txHash;
@@ -103,7 +85,7 @@ function handleError(message) {
   throw new Error(message);
 }
 function replacer(_, value) {
-  if (typeof value === 'bigint') {
+  if (typeof value === "bigint") {
     return value.toString();
   } else {
     return value;
@@ -116,23 +98,18 @@ function formatLog(level, message) {
 [${level}] ${message}`;
 }
 function logInfo(message) {
-  console.log(colors.blue(formatLog('INFO' /* INFO */, message)));
+  console.log(colors.blue(formatLog("INFO" /* INFO */, message)));
 }
 function logWarn(message) {
-  console.log(colors.yellow(formatLog('WARN' /* WARN */, message)));
+  console.log(colors.yellow(formatLog("WARN" /* WARN */, message)));
 }
 function logError(message) {
-  console.error(colors.red(formatLog('ERROR' /* ERROR */, message)));
+  console.error(colors.red(formatLog("ERROR" /* ERROR */, message)));
 }
 function logSuccess(message) {
-  console.log(colors.green(formatLog('SUCCESS' /* SUCCESS */, message)));
+  console.log(colors.green(formatLog("SUCCESS" /* SUCCESS */, message)));
 }
-function logDeploymentDetails(
-  network,
-  contractName,
-  classHash,
-  contractAddress,
-) {
+function logDeploymentDetails(network, contractName, classHash, contractAddress) {
   const deploymentURL = `https://${network}.${explorerURL}/contract/${contractAddress}`;
   const deploymentMessage = `
     ${colors.green(`${contractName} Contract deployed successfully`)}
@@ -173,18 +150,18 @@ async function getNetworkDeploymentPath(network) {
   const config = await loadConfigFile();
   return path2.join(
     config.paths.root || process.cwd(),
-    'src',
-    'scripts',
-    'deployments',
+    "src",
+    "scripts",
+    "deployments",
     network,
-    'deployed_contract_addresses.json',
+    "deployed_contract_addresses.json"
   );
 }
 async function saveContractAddress(contractName, contractAddress, network) {
   try {
     const filePath = await getNetworkDeploymentPath(network);
     await ensureFileExists(filePath);
-    const data = await fs.readFile(filePath, 'utf8');
+    const data = await fs.readFile(filePath, "utf8");
     const jsonData = data.trim() ? JSON.parse(data) : {};
     jsonData[contractName] = contractAddress;
     await fs.writeFile(filePath, JSON.stringify(jsonData, null, 2));
@@ -198,7 +175,7 @@ async function fetchContractAddress(contractName, network) {
   try {
     const filePath = await getNetworkDeploymentPath(network);
     await ensureFileExists(filePath);
-    const data = await fs.readFile(filePath, 'utf8');
+    const data = await fs.readFile(filePath, "utf8");
     const jsonData = JSON.parse(data);
     return jsonData[contractName];
   } catch (error) {
@@ -208,27 +185,27 @@ async function fetchContractAddress(contractName, network) {
 }
 async function getCompiledCode(contractName) {
   const config = await loadConfigFile();
-  const packageName = config.paths.package_name || '';
+  const packageName = config.paths.package_name || "";
   const projectRoot = config.paths.root || process.cwd();
-  const contractClassesDir = config.paths.contractClasses || 'target/dev';
+  const contractClassesDir = config.paths.contractClasses || "target/dev";
   const sierraFilePath = path2.join(
     projectRoot,
     contractClassesDir,
-    `${packageName}_${contractName}.contract_class.json`,
+    `${packageName}_${contractName}.contract_class.json`
   );
   const casmFilePath = path2.join(
     projectRoot,
     contractClassesDir,
-    `${packageName}_${contractName}.compiled_contract_class.json`,
+    `${packageName}_${contractName}.compiled_contract_class.json`
   );
   const code = [sierraFilePath, casmFilePath].map(async (filePath) => {
     const file = await fs.readFile(filePath);
-    return JSON.parse(file.toString('ascii'));
+    return JSON.parse(file.toString("ascii"));
   });
   const [sierraCode, casmCode] = await Promise.all(code);
   return {
     sierraCode,
-    casmCode,
+    casmCode
   };
 }
 async function createProjectStructure() {
@@ -236,34 +213,28 @@ async function createProjectStructure() {
     console.log(LOGO);
     logInfo(`Initializing project structure ...`);
     const projectRoot = process.cwd();
-    const scriptsDir = 'src/scripts';
+    const scriptsDir = "src/scripts";
     const tasksDir = `${scriptsDir}/tasks`;
     const deploymentsDir = `${scriptsDir}/deployments`;
     await ensureDirectoryExists(path2.join(projectRoot, deploymentsDir));
     await ensureDirectoryExists(path2.join(projectRoot, tasksDir));
-    logInfo('Creating example task file');
-    const exampleTaskPath = path2.join(
-      projectRoot,
-      tasksDir,
-      'example_task.ts',
-    );
+    logInfo("Creating example task file");
+    const exampleTaskPath = path2.join(projectRoot, tasksDir, "example_task.ts");
     logInfo(`Example task path: ${exampleTaskPath}`);
     await fs.writeFile(exampleTaskPath, exampleTaskContent);
     const exampleDeploymentPath = path2.join(
       projectRoot,
       deploymentsDir,
-      'example_deployment.ts',
+      "example_deployment.ts"
     );
     await fs.writeFile(exampleDeploymentPath, exampleDeploymentScript);
     const addressesPath = path2.join(
       projectRoot,
       deploymentsDir,
-      'deployed_contract_addresses.json',
+      "deployed_contract_addresses.json"
     );
     await fs.writeFile(addressesPath, JSON.stringify({}, null, 2));
-    logSuccess(
-      '\nStarknet Deploy Project structure created successfully! \u{1F680}',
-    );
+    logSuccess("\nStarknet Deploy Project structure created successfully! \u{1F680}");
     logInfo(`
 Next steps:
   1. Add your scripts in ${tasksDir}
@@ -277,16 +248,16 @@ async function createDefaultConfigFile(configPath) {
   try {
     await fs.writeFile(configPath, defaultConfigContent);
     logInfo(`Created default configuration file at ${configPath}`);
-    logInfo('\nPlease update the configuration file with your:');
-    logInfo('1. Network private keys in the accounts array');
-    logInfo('2. Account addresses in the addresses array');
+    logInfo("\nPlease update the configuration file with your:");
+    logInfo("1. Network private keys in the accounts array");
+    logInfo("2. Account addresses in the addresses array");
   } catch (error) {
     logError(`Failed to create default config file: ${error}`);
     throw error;
   }
 }
 async function loadConfigFile() {
-  const configPath = path2.join(process.cwd(), 'starknet-deploy.config.ts');
+  const configPath = path2.join(process.cwd(), "starknet-deploy.config.ts");
   if (!existsSync(configPath)) {
     await createDefaultConfigFile(configPath);
     process.exit(1);
@@ -373,26 +344,26 @@ const config: StarknetDeployConfig = {
 export default config;
 `;
 var defaultConfig = {
-  defaultNetwork: 'sepolia',
+  defaultNetwork: "sepolia",
   networks: {
     sepolia: {
-      rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
-      accounts: ['<privateKey1>'],
-      addresses: ['<address1>'],
+      rpcUrl: "https://starknet-sepolia.public.blastapi.io",
+      accounts: ["<privateKey1>"],
+      addresses: ["<address1>"]
     },
     local: {
-      rpcUrl: 'http://localhost:5050',
+      rpcUrl: "http://localhost:5050",
       accounts: [],
-      addresses: [],
-    },
+      addresses: []
+    }
   },
   paths: {
     root: process.cwd(),
-    package_name: 'test_project',
+    package_name: "test_project",
     // cairo package name
-    contractClasses: 'target/dev',
-    scripts: 'src/scripts',
-  },
+    contractClasses: "target/dev",
+    scripts: "src/scripts"
+  }
 };
 
 // src/ContractManager.ts
@@ -406,7 +377,7 @@ var ContractManager = class {
       accountAddress,
       privateKey,
       void 0,
-      '0x3',
+      "0x3"
     );
   }
   /**
@@ -425,7 +396,7 @@ var ContractManager = class {
     const networkConfig = config.networks[currentNetwork];
     if (!networkConfig) {
       throw new Error(
-        `Network configuration not found for network: ${currentNetwork}`,
+        `Network configuration not found for network: ${currentNetwork}`
       );
     }
     if (accountIndex < 0 || accountIndex >= networkConfig.accounts.length) {
@@ -435,12 +406,12 @@ var ContractManager = class {
     const accountAddress = networkConfig.addresses[accountIndex];
     if (!privateKey) {
       throw new Error(
-        `Private key not found for account index: ${accountIndex}`,
+        `Private key not found for account index: ${accountIndex}`
       );
     }
     if (!accountAddress) {
       throw new Error(
-        `Account address not found for account index: ${accountIndex}`,
+        `Account address not found for account index: ${accountIndex}`
       );
     }
     this.account = new Account(
@@ -448,10 +419,10 @@ var ContractManager = class {
       accountAddress,
       privateKey,
       void 0,
-      '0x3',
+      "0x3"
     );
     logInfo(
-      `Switched to account index ${accountIndex}. New account address: ${accountAddress}`,
+      `Switched to account index ${accountIndex}. New account address: ${accountAddress}`
     );
   }
   /**
@@ -467,36 +438,36 @@ var ContractManager = class {
     const config = await loadConfigFile();
     const currentNetwork = config.defaultNetwork;
     logInfo(
-      `Deploying contract: ${contractName}, with initial args: ${JSON.stringify(constructorArgs, replacer, 2)}`,
+      `Deploying contract: ${contractName}, with initial args: ${JSON.stringify(constructorArgs, replacer, 2)}`
     );
     try {
       const { sierraCode, casmCode } = await getCompiledCode(contractName);
       let constructorCalldata;
       if (constructorArgs) {
         const callData = new CallData(sierraCode.abi);
-        constructorCalldata = callData.compile('constructor', constructorArgs);
+        constructorCalldata = callData.compile("constructor", constructorArgs);
       }
       const deployResponse = await this.account.declareAndDeploy({
         contract: sierraCode,
         casm: casmCode,
         constructorCalldata,
-        salt: stark.randomAddress(),
+        salt: stark.randomAddress()
       });
       logDeploymentDetails(
         config.defaultNetwork,
         contractName,
         deployResponse.declare.class_hash,
-        deployResponse.deploy.address,
+        deployResponse.deploy.address
       );
       await saveContractAddress(
         contractName,
         deployResponse.deploy.address,
-        currentNetwork,
+        currentNetwork
       );
       return deployResponse.deploy.address;
     } catch (error) {
       logError(
-        `Failed to deploy ${contractName} contract  with error: ${error}`,
+        `Failed to deploy ${contractName} contract  with error: ${error}`
       );
       throw error;
     }
@@ -512,17 +483,20 @@ var ContractManager = class {
     const currentNetwork = config.defaultNetwork;
     const contractAddress = await fetchContractAddress(
       contractName,
-      currentNetwork,
+      currentNetwork
     );
     if (!contractAddress) {
       throw new Error(`Contract address for ${contractName} not found`);
     }
     const { sierraCode } = await getCompiledCode(contractName);
     const contract_abi = sierraCode.abi;
-    const contract = new Contract(contract_abi, contractAddress, this.provider);
-    contract.connect(this.account);
+    const contract = new Contract(
+      contract_abi,
+      contractAddress,
+      this.provider
+    );
     logSuccess(
-      `Connected to ${contractName} contract with address ${this.account.address}`,
+      `Connected to ${contractName} contract with address ${this.account.address}`
     );
     return contract;
   }
@@ -533,17 +507,16 @@ var ContractManager = class {
    */
   async getContractByAddress(contractAddress) {
     try {
-      const { abi: contractAbi } =
-        await this.provider.getClassAt(contractAddress);
+      const { abi: contractAbi } = await this.provider.getClassAt(contractAddress);
       if (!contractAbi) {
         throw new Error(
-          `No ABI found for contract at address ${contractAddress}`,
+          `No ABI found for contract at address ${contractAddress}`
         );
       }
       const contract = new Contract(
         contractAbi,
         contractAddress,
-        this.provider,
+        this.provider
       );
       return contract;
     } catch (error) {
@@ -566,10 +539,10 @@ var ContractManager = class {
    * @private
    */
   async resolveContract(contractRef) {
-    if (typeof contractRef !== 'string') {
+    if (typeof contractRef !== "string") {
       return contractRef;
     }
-    if (this.isStarknetAddress(contractRef)) {
+    if (this.isStarknetAddress(getChecksumAddress(contractRef))) {
       return await this.getContractByAddress(contractRef);
     } else {
       return await this.getContractInstance(contractRef);
@@ -577,7 +550,7 @@ var ContractManager = class {
   }
   /**
    * Calls a function on a deployed contract.
-   * @param contract Contract instance or contract address.
+   * @param contract Contract name, contract instance, or contract address.
    * @param functionName The name of the function to call on the contract.
    * @param args The arguments for the function.
    * @returns A promise that resolves with the
@@ -602,31 +575,27 @@ var ContractManager = class {
    * @returns A promise that resolves with the transaction receipt.
    * @throws Will throw an error if the transaction fails.
    */
-  async executeTransaction(
-    contract,
-    functionName,
-    args = [],
-    bufferPercentage = 20,
-  ) {
+  async executeTransaction(contract, functionName, args = [], bufferPercentage = 20) {
     const contractInstance = await this.resolveContract(contract);
+    contractInstance.connect(this.account);
     const maxFee = await this.estimateMaxFee(
       contractInstance,
       functionName,
       args,
-      bufferPercentage,
+      bufferPercentage
     );
     try {
       const txResponse = await contractInstance.invoke(functionName, args, {
-        maxFee,
+        maxFee
       });
       const txReceipt = await this.provider.waitForTransaction(
-        txResponse.transaction_hash,
+        txResponse.transaction_hash
       );
       this.handleTxReceipt(txReceipt, functionName);
       return txResponse.transaction_hash;
     } catch (error) {
       logError(
-        `An error occurred during execution of ${functionName} function`,
+        `An error occurred during execution of ${functionName} function`
       );
       throw error;
     }
@@ -639,15 +608,12 @@ var ContractManager = class {
    * @param bufferPercentage - The percentage buffer to add to the suggested max fee.
    * @returns The multiplied suggested max fee.
    */
-  async estimateMaxFee(contract, functionName, functionArgs, bufferPercentage) {
-    const feeEstimate = await contract.estimateFee[functionName](
-      ...functionArgs,
-    );
+  async estimateMaxFee(contract, functionName, args = [], bufferPercentage) {
+    const feeEstimate = await contract.estimateFee[functionName](...args);
     const suggestedMaxFee = BigInt(feeEstimate.suggestedMaxFee);
-    const maxFee =
-      (suggestedMaxFee * BigInt(100 + bufferPercentage)) / BigInt(100);
+    const maxFee = suggestedMaxFee * BigInt(100 + bufferPercentage) / BigInt(100);
     logInfo(
-      `Suggested max fee for ${functionName}: ${suggestedMaxFee}, Max fee with buffer: ${maxFee}`,
+      `Suggested max fee for ${functionName}: ${suggestedMaxFee}, Max fee with buffer: ${maxFee}`
     );
     return maxFee;
   }
@@ -660,7 +626,7 @@ var ContractManager = class {
       success: (successReceipt) => {
         logSuccess(
           `${operationName} transaction succeeded
-Explorer URL: ${getExplorerUrl(currentNetwork, successReceipt.transaction_hash)}`,
+Explorer URL: ${getExplorerUrl(currentNetwork, successReceipt.transaction_hash)}`
         );
       },
       reverted: (revertedReceipt) => {
@@ -674,7 +640,7 @@ Explorer URL: ${getExplorerUrl(currentNetwork, successReceipt.transaction_hash)}
       _: () => {
         const message = `${operationName} transaction failed with unknown error`;
         handleError(message);
-      },
+      }
     });
   }
 };
@@ -690,7 +656,7 @@ var initializeContractManager = async () => {
   const privateKey = networkConfig.accounts[0];
   const accountAddress = networkConfig.addresses[0];
   if (!rpcEndpoint || !privateKey || !accountAddress) {
-    throw new Error('Missing required network configuration values');
+    throw new Error("Missing required network configuration values");
   }
   return new ContractManager(rpcEndpoint, privateKey, accountAddress);
 };
@@ -722,5 +688,5 @@ export {
   defaultConfigContent,
   defaultConfig,
   ContractManager,
-  initializeContractManager,
+  initializeContractManager
 };

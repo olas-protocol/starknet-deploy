@@ -6,4 +6,8 @@ npm run format
 echo "Running JS tests..."
 #npm test
 
+# Build the project
+echo "Building the project..."
+npm run build
+
 git update-index --again

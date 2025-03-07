@@ -1,4 +1,5 @@
 import {
+  getChecksumAddress,
   Account,
   RpcProvider,
   CallData,
@@ -8,6 +9,8 @@ import {
   ReceiptTx,
   Result,
   ArgsOrCalldata,
+  RawArgsArray,
+  validateChecksumAddress,
 } from 'starknet';
 import {
   getCompiledCode,
@@ -20,8 +23,7 @@ import { getExplorerUrl, handleError, replacer } from './common';
 
 interface DeploymentConfig {
   contractName: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructorArgs?: Record<string, any>;
+  constructorArgs?: RawArgsArray;
 }
 /**
  * Provides methods for deploying and interacting with contracts.
@@ -172,8 +174,6 @@ export class ContractManager {
       contractAddress,
       this.provider,
     );
-    // Connect the contract to the account for signing transactions
-    contract.connect(this.account);
     logSuccess(
       `Connected to ${contractName} contract with address ${this.account.address}`,
     );
@@ -233,7 +233,7 @@ export class ContractManager {
       // It's already a Contract instance
       return contractRef;
     }
-    if (this.isStarknetAddress(contractRef)) {
+    if (this.isStarknetAddress(getChecksumAddress(contractRef))) {
       // It's a contract address
       return await this.getContractByAddress(contractRef);
     } else {
@@ -244,7 +244,7 @@ export class ContractManager {
 
   /**
    * Calls a function on a deployed contract.
-   * @param contract Contract instance or contract address.
+   * @param contract Contract name, contract instance, or contract address.
    * @param functionName The name of the function to call on the contract.
    * @param args The arguments for the function.
    * @returns A promise that resolves with the
@@ -281,6 +281,7 @@ export class ContractManager {
     bufferPercentage: number = 20,
   ): Promise<string> {
     const contractInstance = await this.resolveContract(contract);
+    contractInstance.connect(this.account);
 
     // Estimate the fee for the function call
     const maxFee = await this.estimateMaxFee(
@@ -320,14 +321,11 @@ export class ContractManager {
   async estimateMaxFee(
     contract: Contract,
     functionName: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    functionArgs: any[],
+    args: ArgsOrCalldata = [],
     bufferPercentage: number,
   ): Promise<bigint> {
     // @ts-expect-error - TODO: Fix this
-    const feeEstimate = await contract.estimateFee[functionName](
-      ...functionArgs,
-    );
+    const feeEstimate = await contract.estimateFee[functionName](...args);
     const suggestedMaxFee = BigInt(feeEstimate.suggestedMaxFee);
     const maxFee =
       (suggestedMaxFee * BigInt(100 + bufferPercentage)) / BigInt(100);
