@@ -233,9 +233,8 @@ async function createProjectStructure() {
   try {
     console.log(LOGO);
     logInfo(`Initializing project structure ...`);
-    const config = await loadConfigFile();
-    const projectRoot = config.paths.root || process.cwd();
-    const scriptsDir = config.paths.scripts || 'src/scripts';
+    const projectRoot = process.cwd();
+    const scriptsDir = 'src/scripts';
     const tasksDir = `${scriptsDir}/tasks`;
     const deploymentsDir = `${scriptsDir}/deployments`;
     await ensureDirectoryExists(

@@ -3650,9 +3650,8 @@ async function createProjectStructure() {
   try {
     console.log(LOGO);
     logInfo(`Initializing project structure ...`);
-    const config = await loadConfigFile();
-    const projectRoot = config.paths.root || process.cwd();
-    const scriptsDir = config.paths.scripts || 'src/scripts';
+    const projectRoot = process.cwd();
+    const scriptsDir = 'src/scripts';
     const tasksDir = `${scriptsDir}/tasks`;
     const deploymentsDir = `${scriptsDir}/deployments`;
     await ensureDirectoryExists(
@@ -3698,30 +3697,6 @@ Next steps:
     logError(`Failed to create project structure: ${error}`);
     process.exit(1);
   }
-}
-async function createDefaultConfigFile(configPath) {
-  try {
-    await import_fs.promises.writeFile(configPath, defaultConfigContent);
-    logInfo(`Created default configuration file at ${configPath}`);
-    logInfo('\nPlease update the configuration file with your:');
-    logInfo('1. Network private keys in the accounts array');
-    logInfo('2. Account addresses in the addresses array');
-  } catch (error) {
-    logError(`Failed to create default config file: ${error}`);
-    throw error;
-  }
-}
-async function loadConfigFile() {
-  const configPath = import_path.default.join(
-    process.cwd(),
-    'starknet-deploy.config.ts',
-  );
-  if (!(0, import_fs.existsSync)(configPath)) {
-    await createDefaultConfigFile(configPath);
-    process.exit(1);
-  }
-  const loadedConfig = require(configPath);
-  return loadedConfig.default || loadedConfig;
 }
 var exampleDeploymentScript = `
 import "dotenv/config";
@@ -3774,32 +3749,6 @@ var LOGO = `
 \u2588\u2588\u2551  \u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u255D  \u2588\u2588\u2554\u2550\u2550\u2550\u255D \u2588\u2588\u2551     \u2588\u2588\u2551   \u2588\u2588\u2551  \u255A\u2588\u2588\u2554\u255D                    
 \u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2551     \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D   \u2588\u2588\u2551                     
 \u255A\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u255D     \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u255D    \u255A\u2550\u255D                                       
-`;
-var defaultConfigContent = `import { StarknetDeployConfig } from 'starknet-deploy';
-
-const config: StarknetDeployConfig = {
-  defaultNetwork: "sepolia",
-  networks: {
-    sepolia: {
-      rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
-      accounts: ['<privateKey1>'],
-      addresses: ['<address1>'],
-    },
-    local: {
-      rpcUrl: 'http://localhost:5050',
-      accounts: [],
-      addresses: []
-    }
-  },
-  paths: {
-    root: process.cwd(),
-    package_name: 'test_project', // cairo package name
-    contractClasses: 'target/dev',
-    scripts: 'src/scripts',
-  }
-};
-
-export default config;
 `;
 var defaultConfig = {
   defaultNetwork: 'sepolia',
