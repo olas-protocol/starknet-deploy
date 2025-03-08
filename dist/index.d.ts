@@ -132,7 +132,7 @@ declare function fetchContractAddress(contractName: string, network: string): Pr
  * @param contractName - The name of the contract to retrieve compiled code for.
  * @returns am object containing the Sierra and CASM code.
  */
-declare function getCompiledCode(contractName: string): Promise<{
+declare function getCompiledCode(contractName: string, config: StarknetDeployConfig): Promise<{
     sierraCode: any;
     casmCode: any;
 }>;

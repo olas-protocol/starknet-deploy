@@ -83,10 +83,10 @@ const config: StarknetDeployConfig = {
     sepolia: {
       rpcUrl: 'https://starknet-sepolia.public.blastapi.io', // RPC URL for Sepolia
       accounts: ['<privateKey1>'], // Array of private keys for transactions
-      addresses: ['<address1>'], // Optional: predefined contract addresses
+      addresses: ['<address1>'], // Array of addresses for the  given private keys
     },
     local: {
-      rpcUrl: 'http://localhost:5050', // RPC URL for local testing
+      rpcUrl: 'http://localhost:5050',
       accounts: [],
       addresses: [],
     },
@@ -94,9 +94,9 @@ const config: StarknetDeployConfig = {
 
   // File paths for contract classes and scripts
   paths: {
-    package_name: 'your_package_name', // (Optional) Your Scarb package name for compiled contract file names
+    package_name: 'your_scarb_package_name', // (Optional) Your Scarb package name for compiled contract file names.
     root: '', // (Optional) Project root directory (defaults to current working directory)
-    contractClasses: 'build/contracts', // Directory containing compiled contract classes
+    contractClasses: 'target/dev', // Directory containing compiled contract classes
     scripts: 'src/scripts', // Directory for deployment scripts and tasks
   },
 };

@@ -113,7 +113,10 @@ export class ContractManager {
     );
 
     try {
-      const { sierraCode, casmCode } = await getCompiledCode(contractName);
+      const { sierraCode, casmCode } = await getCompiledCode(
+        contractName,
+        config,
+      );
 
       let constructorCalldata;
       if (constructorArgs) {
@@ -165,7 +168,7 @@ export class ContractManager {
       throw new Error(`Contract address for ${contractName} not found`);
     }
 
-    const { sierraCode } = await getCompiledCode(contractName);
+    const { sierraCode } = await getCompiledCode(contractName, config);
     const contract_abi = sierraCode.abi;
 
     const contract: Contract = new Contract(

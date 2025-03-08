@@ -37,7 +37,6 @@ export async function getNetworkDeploymentPath(
   network: string,
 ): Promise<string> {
   const config = await loadConfigFile();
-
   return path.join(
     config.paths.root || process.cwd(),
     'src',
@@ -97,8 +96,10 @@ export async function fetchContractAddress(
  * @param contractName - The name of the contract to retrieve compiled code for.
  * @returns am object containing the Sierra and CASM code.
  */
-export async function getCompiledCode(contractName: string) {
-  const config = await loadConfigFile();
+export async function getCompiledCode(
+  contractName: string,
+  config: StarknetDeployConfig,
+) {
   const packageName = config.paths.package_name || '';
   const projectRoot = config.paths.root || process.cwd();
   const contractClassesDir = config.paths.contractClasses || 'target/dev';

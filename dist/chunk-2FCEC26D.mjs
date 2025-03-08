@@ -183,8 +183,7 @@ async function fetchContractAddress(contractName, network) {
     throw error;
   }
 }
-async function getCompiledCode(contractName) {
-  const config = await loadConfigFile();
+async function getCompiledCode(contractName, config) {
   const packageName = config.paths.package_name || "";
   const projectRoot = config.paths.root || process.cwd();
   const contractClassesDir = config.paths.contractClasses || "target/dev";
@@ -441,7 +440,10 @@ var ContractManager = class {
       `Deploying contract: ${contractName}, with initial args: ${JSON.stringify(constructorArgs, replacer, 2)}`
     );
     try {
-      const { sierraCode, casmCode } = await getCompiledCode(contractName);
+      const { sierraCode, casmCode } = await getCompiledCode(
+        contractName,
+        config
+      );
       let constructorCalldata;
       if (constructorArgs) {
         const callData = new CallData(sierraCode.abi);
@@ -488,7 +490,7 @@ var ContractManager = class {
     if (!contractAddress) {
       throw new Error(`Contract address for ${contractName} not found`);
     }
-    const { sierraCode } = await getCompiledCode(contractName);
+    const { sierraCode } = await getCompiledCode(contractName, config);
     const contract_abi = sierraCode.abi;
     const contract = new Contract(
       contract_abi,
