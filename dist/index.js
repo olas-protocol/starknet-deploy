@@ -545,14 +545,14 @@ var ContractManager = class {
     }
   }
   /**
-   * Calls a function on a deployed contract.
+   *  Queries a function on a deployed contract.
    * @param contract Contract name, contract instance, or contract address.
    * @param functionName The name of the function to call on the contract.
    * @param args The arguments for the function.
    * @returns A promise that resolves with the
    * @throws Will throw an error if the transaction fails.
    */
-  async call(contract, functionName, args = []) {
+  async queryContract(contract, functionName, args = []) {
     const contractInstance = await this.resolveContract(contract);
     try {
       const response = await contractInstance.call(functionName, args);
@@ -563,7 +563,7 @@ var ContractManager = class {
     }
   }
   /**
-   * Executes a function on a deployed contract.
+   * Invokes a function on a deployed contract.
    * @param contract Contract name, contract instance, or contract address.
    * @param functionName The name of the function to call on the contract.
    * @param args The arguments for the function.
@@ -571,7 +571,7 @@ var ContractManager = class {
    * @returns A promise that resolves with the transaction receipt.
    * @throws Will throw an error if the transaction fails.
    */
-  async executeTransaction(contract, functionName, args = [], bufferPercentage = 20) {
+  async invokeContract(contract, functionName, args = [], bufferPercentage = 20) {
     const contractInstance = await this.resolveContract(contract);
     contractInstance.connect(this.account);
     const maxFee = await this.estimateMaxFee(

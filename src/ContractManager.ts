@@ -10,7 +10,6 @@ import {
   Result,
   ArgsOrCalldata,
   RawArgsArray,
-  validateChecksumAddress,
 } from 'starknet';
 import {
   getCompiledCode,
@@ -243,14 +242,14 @@ export class ContractManager {
   }
 
   /**
-   * Calls a function on a deployed contract.
+   *  Queries a function on a deployed contract.
    * @param contract Contract name, contract instance, or contract address.
    * @param functionName The name of the function to call on the contract.
    * @param args The arguments for the function.
    * @returns A promise that resolves with the
    * @throws Will throw an error if the transaction fails.
    */
-  async call(
+  async queryContract(
     contract: Contract | string,
     functionName: string,
     args: ArgsOrCalldata = [],
@@ -266,7 +265,7 @@ export class ContractManager {
     }
   }
   /**
-   * Executes a function on a deployed contract.
+   * Invokes a function on a deployed contract.
    * @param contract Contract name, contract instance, or contract address.
    * @param functionName The name of the function to call on the contract.
    * @param args The arguments for the function.
@@ -274,7 +273,7 @@ export class ContractManager {
    * @returns A promise that resolves with the transaction receipt.
    * @throws Will throw an error if the transaction fails.
    */
-  async executeTransaction(
+  async invokeContract(
     contract: Contract | string,
     functionName: string,
     args: ArgsOrCalldata = [],

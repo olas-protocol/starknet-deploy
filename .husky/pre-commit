@@ -1,9 +1,13 @@
 # Format JS
-echo "Formatting JS files..."
+echo "Formatting files..."
 npm run format
 
+# Lint JS
+echo "Linting files..."
+npm run lint
+
 # Run JS tests
-echo "Running JS tests..."
+echo "Running tests..."
 #npm test
 
 # Build the project

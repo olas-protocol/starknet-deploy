@@ -52,16 +52,16 @@ declare class ContractManager {
      */
     private resolveContract;
     /**
-     * Calls a function on a deployed contract.
+     *  Queries a function on a deployed contract.
      * @param contract Contract name, contract instance, or contract address.
      * @param functionName The name of the function to call on the contract.
      * @param args The arguments for the function.
      * @returns A promise that resolves with the
      * @throws Will throw an error if the transaction fails.
      */
-    call(contract: Contract | string, functionName: string, args?: ArgsOrCalldata): Promise<Result>;
+    queryContract(contract: Contract | string, functionName: string, args?: ArgsOrCalldata): Promise<Result>;
     /**
-     * Executes a function on a deployed contract.
+     * Invokes a function on a deployed contract.
      * @param contract Contract name, contract instance, or contract address.
      * @param functionName The name of the function to call on the contract.
      * @param args The arguments for the function.
@@ -69,7 +69,7 @@ declare class ContractManager {
      * @returns A promise that resolves with the transaction receipt.
      * @throws Will throw an error if the transaction fails.
      */
-    executeTransaction(contract: Contract | string, functionName: string, args?: ArgsOrCalldata, bufferPercentage?: number): Promise<string>;
+    invokeContract(contract: Contract | string, functionName: string, args?: ArgsOrCalldata, bufferPercentage?: number): Promise<string>;
     /**
      * Estimates the maximum fee required for a Starknet transaction.
      * @param contract - The Starknet contract instance.
