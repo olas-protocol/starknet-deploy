@@ -1,6 +1,6 @@
 # StarkNet Deploy
 
-**StarkNet Deploy** is a tool designed to streamline the deployment, interaction, and management of StarkNet contracts. This guide walks you through setting up your project, configuring your environment, and leveraging our public functions to work with contracts seemlesly.
+**StarkNet Deploy** is a tool designed to streamline the deployment, interaction, and management of StarkNet contracts. This guide walks you through setting up your project, configuring your environment, and leveraging our public functions to work with contracts easily.
 
 ## Table of Contents
 

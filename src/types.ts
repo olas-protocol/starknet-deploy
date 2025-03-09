@@ -26,3 +26,5 @@ export interface NetworkConfig {
   accounts: string[];
   addresses: string[];
 }
+
+export type { Account, Contract, Result } from 'starknet';

@@ -245,11 +245,31 @@ export class ContractManager {
   }
 
   /**
+   * Checks if a function exists on a contract.
+   * @param contract - The contract instance to check.
+   * @param functionName - The name of the function to check for.
+   * @throws An error if the function doesn't exist.
+   * @private
+   */
+  private validateFunctionExists(
+    contract: Contract,
+    functionName: string,
+  ): void {
+    if (
+      !Object.prototype.hasOwnProperty.call(contract.functions, functionName)
+    ) {
+      throw new Error(
+        `Function '${functionName}' does not exist on the contract at address ${contract.address}`,
+      );
+    }
+  }
+
+  /**
    *  Queries a function on a deployed contract.
    * @param contract Contract name, contract instance, or contract address.
    * @param functionName The name of the function to call on the contract.
    * @param args The arguments for the function.
-   * @returns A promise that resolves with the
+   * @returns A promise that resolves with the result of the contract function call.
    * @throws Will throw an error if the transaction fails.
    */
   async queryContract(
@@ -258,6 +278,7 @@ export class ContractManager {
     args: ArgsOrCalldata = [],
   ): Promise<Result> {
     const contractInstance = await this.resolveContract(contract);
+    this.validateFunctionExists(contractInstance, functionName);
 
     try {
       const response = await contractInstance.call(functionName, args);
@@ -284,6 +305,7 @@ export class ContractManager {
   ): Promise<string> {
     const contractInstance = await this.resolveContract(contract);
     contractInstance.connect(this.account);
+    this.validateFunctionExists(contractInstance, functionName);
 
     // Estimate the fee for the function call
     const maxFee = await this.estimateMaxFee(
@@ -326,8 +348,7 @@ export class ContractManager {
     args: ArgsOrCalldata = [],
     bufferPercentage: number,
   ): Promise<bigint> {
-    // @ts-expect-error - TODO: Fix this
-    const feeEstimate = await contract.estimateFee[functionName](...args);
+    const feeEstimate = await contract.estimate(functionName, args);
     const suggestedMaxFee = BigInt(feeEstimate.suggestedMaxFee);
     const maxFee =
       (suggestedMaxFee * BigInt(100 + bufferPercentage)) / BigInt(100);
@@ -387,7 +408,15 @@ export const initializeContractManager = async (): Promise<ContractManager> => {
   const accountAddress = networkConfig.addresses[0];
 
   if (!rpcEndpoint || !privateKey || !accountAddress) {
-    throw new Error('Missing required network configuration values');
+    const missingValues = [];
+    if (!rpcEndpoint) missingValues.push('rpcUrl');
+    if (!privateKey) missingValues.push('accounts[0]');
+    if (!accountAddress) missingValues.push('addresses[0]');
+
+    throw new Error(
+      `Missing required network configuration values for "${currentNetwork}": ${missingValues.join(', ')}. ` +
+        `Please check your starknet-deploy config file and ensure all required fields are provided.`,
+    );
   }
 
   return new ContractManager(rpcEndpoint, privateKey, accountAddress);

@@ -5,7 +5,7 @@ import {
   __toESM,
   createProjectStructure,
   init_esm_shims
-} from "./chunk-2FCEC26D.mjs";
+} from "./chunk-3WDDERBX.mjs";
 
 // node_modules/commander/lib/error.js
 var require_error = __commonJS({
@@ -3337,7 +3337,9 @@ var {
 
 // src/cli.ts
 var program2 = new Command();
-program2.name("starknet-deploy").description("CLI tool for StarkNet contract deployment").version("0.0.1");
+program2.name("starknet-deploy").description(
+  "A tool designed to streamline the deployment, interaction, and management of StarkNet contracts"
+).version("0.0.1");
 program2.command("init").description("Initialize a new StarkNet Deploy project").action(createProjectStructure);
 program2.parse(process.argv);
 if (!process.argv.slice(2).length) {

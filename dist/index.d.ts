@@ -1,4 +1,5 @@
 import { RpcProvider, Account, Contract, ArgsOrCalldata, Result, GetTxReceiptResponseWithoutHelper, RawArgsArray, BigNumberish } from 'starknet';
+export { Account, Contract, Result } from 'starknet';
 
 interface DeploymentConfig {
     contractName: string;
@@ -52,11 +53,19 @@ declare class ContractManager {
      */
     private resolveContract;
     /**
+     * Checks if a function exists on a contract.
+     * @param contract - The contract instance to check.
+     * @param functionName - The name of the function to check for.
+     * @throws An error if the function doesn't exist.
+     * @private
+     */
+    private validateFunctionExists;
+    /**
      *  Queries a function on a deployed contract.
      * @param contract Contract name, contract instance, or contract address.
      * @param functionName The name of the function to call on the contract.
      * @param args The arguments for the function.
-     * @returns A promise that resolves with the
+     * @returns A promise that resolves with the result of the contract function call.
      * @throws Will throw an error if the transaction fails.
      */
     queryContract(contract: Contract | string, functionName: string, args?: ArgsOrCalldata): Promise<Result>;
@@ -148,8 +157,8 @@ declare function createProjectStructure(): Promise<void>;
  */
 declare function createDefaultConfigFile(configPath: string): Promise<void>;
 declare function loadConfigFile(): Promise<StarknetDeployConfig>;
-declare const exampleDeploymentScript = "\nimport \"dotenv/config\";\nimport { initializeContractManager } from \"starknet-deploy\";\n\nasync function main() {\n  const contractManager = initializeContractManager();\n\n  await contractManager.deployContract({\n    contractName: \"<contract_name>\",\n  });\n}\n\nmain()\n  .then(() => process.exit(0))\n  .catch((error) => {\n    console.error(error);\n    process.exit(1);\n  });\n";
-declare const exampleTaskContent = "\nimport { initializeContractManager } from \"starknet-deploy\";\nimport { Command } from 'commander';\n\nasync function main() {\n\n  const program = new Command();\n  program\n    .requiredOption('-c, --param <param_type>', 'Param definition')\n\n  program.parse(process.argv);\n  const options = program.opts();\n}\n\nmain().catch((error) => {\n  console.error(error);\n  process.exit(1);\n});";
+declare const exampleDeploymentScript = "\nimport { initializeContractManager } from 'starknet-deploy';\n\n(async () => {\n  const contractManager = await initializeContractManager();\n\n  // Deploy a contract named 'MyContract' with constructor arguments\n  const contractAddress = await contractManager.deployContract({\n    contractName: 'MyContract',\n    constructorArgs: [123, '0x456'],\n  });\n\n})();\n";
+declare const exampleTaskContent = "\nimport { initializeContractManager } from 'starknet-deploy';\n\n(async () => {\n  const contractManager = await initializeContractManager();\n\n  // Invoke a function (e.g., 'transfer') to update the contract state\n  const txHash = await contractManager.invokeContract(\n    'MyToken', // Contract reference (name, address, or instance)\n    'transfer', // Function name\n    ['0x04a1496...', 1000], // Function arguments\n    20, // Optional fee buffer percentage (default is 20%)\n  );\n\n})();\n";
 declare const defaultConfigContent = "import { StarknetDeployConfig } from 'starknet-deploy';\n\nconst config: StarknetDeployConfig = {\n  defaultNetwork: \"sepolia\",\n  networks: {\n    sepolia: {\n      rpcUrl: 'https://starknet-sepolia.public.blastapi.io',\n      accounts: ['<privateKey1>'],\n      addresses: ['<address1>'],\n    },\n    local: {\n      rpcUrl: 'http://localhost:5050',\n      accounts: [],\n      addresses: []\n    }\n  },\n  paths: {\n    root: process.cwd(),\n    package_name: 'test_project', // cairo package name\n    contractClasses: 'target/dev',\n    scripts: 'src/scripts',\n  }\n};\n\nexport default config;\n";
 declare const defaultConfig: StarknetDeployConfig;
 

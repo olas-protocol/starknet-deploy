@@ -216,44 +216,37 @@ export async function loadConfigFile(): Promise<StarknetDeployConfig> {
 
 // Example deployment script content
 export const exampleDeploymentScript = `
-import "dotenv/config";
-import { initializeContractManager } from "starknet-deploy";
+import { initializeContractManager } from 'starknet-deploy';
 
-async function main() {
-  const contractManager = initializeContractManager();
+(async () => {
+  const contractManager = await initializeContractManager();
 
-  await contractManager.deployContract({
-    contractName: "<contract_name>",
+  // Deploy a contract named 'MyContract' with constructor arguments
+  const contractAddress = await contractManager.deployContract({
+    contractName: 'MyContract',
+    constructorArgs: [123, '0x456'],
   });
-}
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+})();
 `;
 
 // Example task content
 export const exampleTaskContent = `
-import { initializeContractManager } from "starknet-deploy";
-import { Command } from 'commander';
+import { initializeContractManager } from 'starknet-deploy';
 
-async function main() {
+(async () => {
+  const contractManager = await initializeContractManager();
 
-  const program = new Command();
-  program
-    .requiredOption('-c, --param <param_type>', 'Param definition')
+  // Invoke a function (e.g., 'transfer') to update the contract state
+  const txHash = await contractManager.invokeContract(
+    'MyToken', // Contract reference (name, address, or instance)
+    'transfer', // Function name
+    ['0x04a1496...', 1000], // Function arguments
+    20, // Optional fee buffer percentage (default is 20%)
+  );
 
-  program.parse(process.argv);
-  const options = program.opts();
-}
-
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});`;
+})();
+`;
 
 const LOGO = `
 ███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███╗   ██╗███████╗████████╗

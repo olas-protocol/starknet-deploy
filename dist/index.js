@@ -261,42 +261,35 @@ async function loadConfigFile() {
   return loadedConfig.default || loadedConfig;
 }
 var exampleDeploymentScript = `
-import "dotenv/config";
-import { initializeContractManager } from "starknet-deploy";
+import { initializeContractManager } from 'starknet-deploy';
 
-async function main() {
-  const contractManager = initializeContractManager();
+(async () => {
+  const contractManager = await initializeContractManager();
 
-  await contractManager.deployContract({
-    contractName: "<contract_name>",
+  // Deploy a contract named 'MyContract' with constructor arguments
+  const contractAddress = await contractManager.deployContract({
+    contractName: 'MyContract',
+    constructorArgs: [123, '0x456'],
   });
-}
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+})();
 `;
 var exampleTaskContent = `
-import { initializeContractManager } from "starknet-deploy";
-import { Command } from 'commander';
+import { initializeContractManager } from 'starknet-deploy';
 
-async function main() {
+(async () => {
+  const contractManager = await initializeContractManager();
 
-  const program = new Command();
-  program
-    .requiredOption('-c, --param <param_type>', 'Param definition')
+  // Invoke a function (e.g., 'transfer') to update the contract state
+  const txHash = await contractManager.invokeContract(
+    'MyToken', // Contract reference (name, address, or instance)
+    'transfer', // Function name
+    ['0x04a1496...', 1000], // Function arguments
+    20, // Optional fee buffer percentage (default is 20%)
+  );
 
-  program.parse(process.argv);
-  const options = program.opts();
-}
-
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});`;
+})();
+`;
 var LOGO = `
 \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2557  \u2588\u2588\u2557\u2588\u2588\u2588\u2557   \u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557
 \u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255D\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551 \u2588\u2588\u2554\u255D\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255D
@@ -547,15 +540,30 @@ var ContractManager = class {
     }
   }
   /**
+   * Checks if a function exists on a contract.
+   * @param contract - The contract instance to check.
+   * @param functionName - The name of the function to check for.
+   * @throws An error if the function doesn't exist.
+   * @private
+   */
+  validateFunctionExists(contract, functionName) {
+    if (!Object.prototype.hasOwnProperty.call(contract.functions, functionName)) {
+      throw new Error(
+        `Function '${functionName}' does not exist on the contract at address ${contract.address}`
+      );
+    }
+  }
+  /**
    *  Queries a function on a deployed contract.
    * @param contract Contract name, contract instance, or contract address.
    * @param functionName The name of the function to call on the contract.
    * @param args The arguments for the function.
-   * @returns A promise that resolves with the
+   * @returns A promise that resolves with the result of the contract function call.
    * @throws Will throw an error if the transaction fails.
    */
   async queryContract(contract, functionName, args = []) {
     const contractInstance = await this.resolveContract(contract);
+    this.validateFunctionExists(contractInstance, functionName);
     try {
       const response = await contractInstance.call(functionName, args);
       return response;
@@ -576,6 +584,7 @@ var ContractManager = class {
   async invokeContract(contract, functionName, args = [], bufferPercentage = 20) {
     const contractInstance = await this.resolveContract(contract);
     contractInstance.connect(this.account);
+    this.validateFunctionExists(contractInstance, functionName);
     const maxFee = await this.estimateMaxFee(
       contractInstance,
       functionName,
@@ -607,7 +616,7 @@ var ContractManager = class {
    * @returns The multiplied suggested max fee.
    */
   async estimateMaxFee(contract, functionName, args = [], bufferPercentage) {
-    const feeEstimate = await contract.estimateFee[functionName](...args);
+    const feeEstimate = await contract.estimate(functionName, args);
     const suggestedMaxFee = BigInt(feeEstimate.suggestedMaxFee);
     const maxFee = suggestedMaxFee * BigInt(100 + bufferPercentage) / BigInt(100);
     logInfo(
@@ -654,7 +663,13 @@ var initializeContractManager = async () => {
   const privateKey = networkConfig.accounts[0];
   const accountAddress = networkConfig.addresses[0];
   if (!rpcEndpoint || !privateKey || !accountAddress) {
-    throw new Error("Missing required network configuration values");
+    const missingValues = [];
+    if (!rpcEndpoint) missingValues.push("rpcUrl");
+    if (!privateKey) missingValues.push("accounts[0]");
+    if (!accountAddress) missingValues.push("addresses[0]");
+    throw new Error(
+      `Missing required network configuration values for "${currentNetwork}": ${missingValues.join(", ")}. Please check your starknet-deploy config file and ensure all required fields are provided.`
+    );
   }
   return new ContractManager(rpcEndpoint, privateKey, accountAddress);
 };

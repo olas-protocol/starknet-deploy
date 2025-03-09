@@ -3445,42 +3445,35 @@ Next steps:
   }
 }
 var exampleDeploymentScript = `
-import "dotenv/config";
-import { initializeContractManager } from "starknet-deploy";
+import { initializeContractManager } from 'starknet-deploy';
 
-async function main() {
-  const contractManager = initializeContractManager();
+(async () => {
+  const contractManager = await initializeContractManager();
 
-  await contractManager.deployContract({
-    contractName: "<contract_name>",
+  // Deploy a contract named 'MyContract' with constructor arguments
+  const contractAddress = await contractManager.deployContract({
+    contractName: 'MyContract',
+    constructorArgs: [123, '0x456'],
   });
-}
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+})();
 `;
 var exampleTaskContent = `
-import { initializeContractManager } from "starknet-deploy";
-import { Command } from 'commander';
+import { initializeContractManager } from 'starknet-deploy';
 
-async function main() {
+(async () => {
+  const contractManager = await initializeContractManager();
 
-  const program = new Command();
-  program
-    .requiredOption('-c, --param <param_type>', 'Param definition')
+  // Invoke a function (e.g., 'transfer') to update the contract state
+  const txHash = await contractManager.invokeContract(
+    'MyToken', // Contract reference (name, address, or instance)
+    'transfer', // Function name
+    ['0x04a1496...', 1000], // Function arguments
+    20, // Optional fee buffer percentage (default is 20%)
+  );
 
-  program.parse(process.argv);
-  const options = program.opts();
-}
-
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});`;
+})();
+`;
 var LOGO = `
 \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2557  \u2588\u2588\u2557\u2588\u2588\u2588\u2557   \u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557
 \u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255D\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551 \u2588\u2588\u2554\u255D\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255D
@@ -3524,7 +3517,9 @@ init_cjs_shims();
 
 // src/cli.ts
 var program2 = new Command();
-program2.name("starknet-deploy").description("CLI tool for StarkNet contract deployment").version("0.0.1");
+program2.name("starknet-deploy").description(
+  "A tool designed to streamline the deployment, interaction, and management of StarkNet contracts"
+).version("0.0.1");
 program2.command("init").description("Initialize a new StarkNet Deploy project").action(createProjectStructure);
 program2.parse(process.argv);
 if (!process.argv.slice(2).length) {
