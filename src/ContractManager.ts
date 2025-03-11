@@ -187,27 +187,28 @@ export class ContractManager {
    * @returns A connected Contract instance.
    */
   async getContractByAddress(contractAddress: string): Promise<Contract> {
+    const checksumAddress = getChecksumAddress(contractAddress);
     try {
       // Fetch the contract class at the given address
       const { abi: contractAbi } =
-        await this.provider.getClassAt(contractAddress);
+        await this.provider.getClassAt(checksumAddress);
 
       if (!contractAbi) {
         throw new Error(
-          `No ABI found for contract at address ${contractAddress}`,
+          `No ABI found for contract at address ${checksumAddress}`,
         );
       }
 
       // Create a new Contract instance with the ABI and address
       const contract = new Contract(
         contractAbi,
-        contractAddress,
+        checksumAddress,
         this.provider,
       );
 
       return contract;
     } catch (error) {
-      logError(`Failed to connect to contract at address ${contractAddress}:`);
+      logError(`Failed to connect to contract at address ${checksumAddress}:`);
       throw error;
     }
   }
@@ -218,8 +219,8 @@ export class ContractManager {
    * @returns boolean indicating if the string is a Starknet address
    */
   public isStarknetAddress(value: string): boolean {
-    // Starknet addresses are 0x followed by a 64-character hex string
-    return /^0x[0-9a-fA-F]{63,64}$/.test(value);
+    // Starknet addresses are 0x followed by 62-64 hexadecimal characters
+    return /^0x[0-9a-fA-F]{62,64}$/.test(value);
   }
 
   /**
@@ -235,7 +236,7 @@ export class ContractManager {
       // It's already a Contract instance
       return contractRef;
     }
-    if (this.isStarknetAddress(getChecksumAddress(contractRef))) {
+    if (this.isStarknetAddress(contractRef)) {
       // It's a contract address
       return await this.getContractByAddress(contractRef);
     } else {

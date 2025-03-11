@@ -143,6 +143,11 @@ export async function createProjectStructure() {
     const tasksDir = `${scriptsDir}/tasks`;
     const deploymentsDir = `${scriptsDir}/deployments`;
 
+    // Create configuration file
+    await createDefaultConfigFile(
+      path.join(projectRoot, 'starknet-deploy.config.ts'),
+    );
+
     // Create scripts directory and its subdirectories
     await ensureDirectoryExists(path.join(projectRoot, deploymentsDir));
     await ensureDirectoryExists(path.join(projectRoot, tasksDir));
@@ -162,14 +167,6 @@ export async function createProjectStructure() {
     );
     await fs.writeFile(exampleDeploymentPath, exampleDeploymentScript);
 
-    // Create empty addresses file
-    const addressesPath = path.join(
-      projectRoot,
-      deploymentsDir,
-      'deployed_contract_addresses.json',
-    );
-
-    await fs.writeFile(addressesPath, JSON.stringify({}, null, 2));
     logSuccess('\nStarknet Deploy Project structure created successfully! 🚀');
     logInfo(`\nNext steps:
   1. Add your scripts in ${tasksDir}
@@ -266,14 +263,16 @@ const LOGO = `
 
 // Default configuration file content that will be created during init
 export const defaultConfigContent = `import { StarknetDeployConfig } from 'starknet-deploy';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const config: StarknetDeployConfig = {
   defaultNetwork: "sepolia",
   networks: {
     sepolia: {
       rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
-      accounts: ['<privateKey1>'],
-      addresses: ['<address1>'],
+      accounts: [process.env.PRIVATE_KEY_1],
+      addresses: [process.env.ADDRESS_1],
     },
     local: {
       rpcUrl: 'http://localhost:5050',
@@ -283,7 +282,7 @@ const config: StarknetDeployConfig = {
   },
   paths: {
     root: process.cwd(),
-    package_name: 'test_project', // cairo package name
+    package_name: 'test_project', // scarb package name, prefix for contract classes
     contractClasses: 'target/dev',
     scripts: 'src/scripts',
   }
