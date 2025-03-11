@@ -29,5 +29,5 @@ jobs:
         with:
           publish: npm run release
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WRITE_STARKNET_DEPLOY_KEY }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

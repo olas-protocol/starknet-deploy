@@ -32,7 +32,7 @@
 Install the package via npm:
 
 ```sh
-npm install starknet-deploy
+npm install @olas-protocol/starknet-deploy
 ```
 
 ## Project Initialization
@@ -113,7 +113,7 @@ The Contract Manager exposes several public functions to help you deploy contrac
 Before performing any operations, initialize the Contract Manager:
 
 ```typescript
-import { initializeContractManager } from 'starknet-deploy';
+import { initializeContractManager } from '@olas-protocol/starknet-deploy';
 
 (async () => {
   // Initialize the contract manager
@@ -127,7 +127,7 @@ import { initializeContractManager } from 'starknet-deploy';
 Deploy contracts using the deployContract function. Deployed addresses are stored automatically for future reference.
 
 ```typescript
-import { initializeContractManager } from 'starknet-deploy';
+import { initializeContractManager } from '@olas-protocol/starknet-deploy';
 
 (async () => {
   const contractManager = await initializeContractManager();
@@ -149,7 +149,7 @@ import { initializeContractManager } from 'starknet-deploy';
 Retrieve a contract instance by its name (from saved deployments) or by using its address directly.
 
 ```typescript
-import { initializeContractManager } from 'starknet-deploy';
+import { initializeContractManager } from '@olas-protocol/starknet-deploy';
 
 (async () => {
   const contractManager = await initializeContractManager();
@@ -169,7 +169,7 @@ import { initializeContractManager } from 'starknet-deploy';
 To read state (i.e., call a view function), use the queryContract function with the appropriate parameters.
 
 ```typescript
-import { initializeContractManager } from 'starknet-deploy';
+import { initializeContractManager } from '@olas-protocol/starknet-deploy';
 
 (async () => {
   const contractManager = await initializeContractManager();
@@ -190,7 +190,7 @@ import { initializeContractManager } from 'starknet-deploy';
 For state-changing operations, invoke a function using the invokeContract method. You can also specify an optional fee buffer percentage.
 
 ```typescript
-import { initializeContractManager } from 'starknet-deploy';
+import { initializeContractManager } from '@olas-protocol/starknet-deploy';
 
 (async () => {
   const contractManager = await initializeContractManager();
@@ -212,7 +212,7 @@ import { initializeContractManager } from 'starknet-deploy';
 You can change the account used for sending transactions with the updateAccount function. This allows you to manage multiple accounts seamlessly.
 
 ```typescript
-import { initializeContractManager } from 'starknet-deploy';
+import { initializeContractManager } from '@olas-protocol/starknet-deploy';
 
 (async () => {
   const contractManager = await initializeContractManager();
