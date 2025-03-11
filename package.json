@@ -9,7 +9,12 @@
     "cairo"
   ],
   "version": "0.0.1",
+  "homepage": "https://github.com/olas-protocol/starknet-deploy#readme",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/olas-protocol/starknet-deploy.git"
+  },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
