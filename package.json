@@ -1,5 +1,5 @@
 {
-  "name": "starknet-deploy",
+  "name": "@olas-protocol/starknet-deploy",
   "description": "A toolkit for deploying and interacting with StarkNet smart contracts.",
   "keywords": [
     "starknet",
@@ -23,6 +23,7 @@
     "lint-fix": "eslint . --fix",
     "test": "jest",
     "prepare": "husky",
+    "release": "npm run build && changeset publish --access public",
     "local-release": "changeset version && changeset publish",
     "ci": "npm run lint && npm run format && npm run build",
     "prepublishOnly": "npm run ci"
