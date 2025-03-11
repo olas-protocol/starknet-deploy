@@ -1,5 +1,11 @@
 # @olas-protocol/starknet-deploy
 
+## 0.0.2
+
+### Patch Changes
+
+- Add repo details to package.json
+
 ## 0.0.1
 
 ### Patch Changes
