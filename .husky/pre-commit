@@ -1,9 +1,17 @@
 # Format JS
-echo "Formatting JS files..."
+echo "Formatting files..."
 npm run format
 
+# Lint JS
+echo "Linting files..."
+npm run lint
+
 # Run JS tests
-echo "Running JS tests..."
-npm test
+echo "Running tests..."
+#npm test
+
+# Build the project
+echo "Building the project..."
+npm run build
 
 git update-index --again

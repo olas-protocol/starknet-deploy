@@ -5,7 +5,9 @@ const program = new Command();
 
 program
   .name('starknet-deploy')
-  .description('CLI tool for StarkNet contract deployment')
+  .description(
+    'A tool designed to streamline the deployment, interaction, and management of StarkNet contracts',
+  )
   .version('0.0.1');
 
 program

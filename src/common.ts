@@ -1,5 +1,7 @@
 import { logError } from './logger';
 
+export const explorerURL = `starkscan.co`;
+
 /**
  * Converts a given number of days into a future Unix timestamp by adding to the current timestamp.
  * @param days - The number of days to add to the current timestamp.
@@ -20,10 +22,15 @@ export function generateFutureTimestamp(days: number): number {
  * @param txHash The transaction hash
  * @returns The explorer URL or just the hash if no explorer URL is configured
  */
-export function getExplorerUrl(txHash: string): string {
-  return process.env.BLOCK_EXPLORER_URL
-    ? `${process.env.BLOCK_EXPLORER_URL}/tx/${txHash}`
-    : txHash;
+export function getExplorerUrl(network: string, txHash: string): string {
+  switch (network) {
+    case 'sepolia':
+      return `https://sepolia.${explorerURL}/tx/${txHash}`;
+    case 'mainnet':
+      return `https://${explorerURL}/tx/${txHash}`;
+    default:
+      return txHash;
+  }
 }
 
 /**

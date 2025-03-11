@@ -1,10 +1,19 @@
-/src
-/node_modules
+src
+node_modules
 
+# Config files
 .env
-.DS_Store
-
 tsconfig.json
 tsup.config.ts
 eslint.config.mjs
 .prettierrc
+.github
+.husky
+
+# OS files
+.DS_Store
+
+# Tests
+jest.config.js
+__tests__
+coverage

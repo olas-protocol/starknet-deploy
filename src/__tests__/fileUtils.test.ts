@@ -1,15 +1,36 @@
-import { promises as fs } from 'fs';
+import { existsSync, promises as fs } from 'fs';
 import * as fileUtils from '../fileUtils';
 import { describe, expect, beforeEach, it, jest } from '@jest/globals';
-import toml from 'toml';
 import path from 'path';
+import { StarknetDeployConfig } from '../types';
 
-// Mock toml
-jest.mock('toml', () => ({
-  parse: jest.fn(),
-}));
+// Mock config object
+const mockConfig: StarknetDeployConfig = {
+  defaultNetwork: 'sepolia',
+  networks: {
+    sepolia: {
+      rpcUrl: 'https://test-url',
+      accounts: ['test-key'],
+      addresses: ['test-address'],
+    },
+    testnet: {
+      rpcUrl: 'http://localhost:5050',
+      accounts: ['0x123'],
+      addresses: ['0x456'],
+    },
+  },
+  paths: {
+    root: process.cwd(),
+    package_name: 'test_project',
+    contractClasses: 'target/dev',
+    scripts: 'src/scripts',
+  },
+};
 
-// Mock fs
+// Mock StarknetDeployConfig file
+jest.mock(process.cwd() + '/starknet-deploy.config.ts', () => mockConfig, {
+  virtual: true,
+});
 jest.mock('fs', () => ({
   promises: {
     mkdir: jest.fn(),
@@ -17,22 +38,27 @@ jest.mock('fs', () => ({
     writeFile: jest.fn(),
     access: jest.fn(),
   },
-  existsSync: jest.fn(),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  existsSync: jest.fn().mockImplementation((path: any) => {
+    // Special case for config file - always return true
+    if (path.includes('starknet-deploy.config.ts')) {
+      return true;
+    }
+    // For other paths, return false by default to match test expectations
+    return false;
+  }),
 }));
 
 describe('FileUtils', () => {
   beforeEach(() => {
     // 1. Clear all mocks
     jest.clearAllMocks();
+  });
 
-    // 2. Mock file read for Scarb.toml
-    (fs.readFile as jest.Mock).mockResolvedValue(
-      '[package]\nname = "test_project"' as never,
-    );
-
-    // 3. Mock toml parser
-    (toml.parse as jest.Mock).mockReturnValue({
-      package: { name: 'test_project' },
+  describe('loadConfigFile', () => {
+    it('should return mock config', async () => {
+      const config = await fileUtils.loadConfigFile();
+      expect(config).toEqual(mockConfig);
     });
   });
 
@@ -41,42 +67,62 @@ describe('FileUtils', () => {
       await fileUtils.ensureDirectoryExists('test/dir');
       expect(fs.mkdir).toHaveBeenCalledWith('test/dir', { recursive: true });
     });
-  });
 
-  describe('fetchContractAddress', () => {
-    it('should return contract address from json file', async () => {
-      (fs.readFile as jest.Mock).mockResolvedValue(
-        JSON.stringify({ TestContract: '0x123' }) as never,
+    it('should handle directory creation error', async () => {
+      (fs.mkdir as jest.Mock).mockRejectedValueOnce(
+        new Error('Permission denied') as never,
       );
 
-      const address = await fileUtils.fetchContractAddress('TestContract');
-      expect(address).toBe('0x123');
-    });
-
-    it('should throw error if contract not found', async () => {
-      (fs.readFile as jest.Mock).mockResolvedValue('{}' as never);
-
-      const address = await fileUtils.fetchContractAddress(
-        'NonExistentContract',
+      await expect(fileUtils.ensureDirectoryExists('test/dir')).rejects.toThrow(
+        'Permission denied',
       );
-      expect(address).toBeUndefined();
     });
   });
 
-  describe('getPackageName', () => {
-    it('should return package name from Scarb.toml', async () => {
-      const packageName = await fileUtils.getPackageName();
-      expect(packageName).toBe('test_project');
+  describe('ensureFileExists', () => {
+    beforeEach(() => {
+      (existsSync as jest.Mock).mockReturnValue(false);
     });
 
-    it('should throw error if Scarb.toml is invalid', async () => {
-      (fs.readFile as jest.Mock).mockRejectedValue(
-        new Error('File not found') as never,
-      );
+    it('should create directory and file if they do not exist', async () => {
+      await fileUtils.ensureFileExists('test/dir/file.json');
 
-      await expect(fileUtils.getPackageName()).rejects.toThrow(
-        'File not found',
+      expect(fs.mkdir).toHaveBeenCalledWith('test/dir', { recursive: true });
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        'test/dir/file.json',
+        JSON.stringify({}),
       );
+    });
+
+    it('should not create directory if it exists', async () => {
+      (existsSync as jest.Mock).mockImplementation((path) => {
+        return path === 'test/dir';
+      });
+
+      await fileUtils.ensureFileExists('test/dir/file.json');
+
+      expect(fs.mkdir).not.toHaveBeenCalled();
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        'test/dir/file.json',
+        JSON.stringify({}),
+      );
+    });
+
+    it('should not create file if it exists', async () => {
+      (existsSync as jest.Mock).mockReturnValue(true);
+
+      await fileUtils.ensureFileExists('test/dir/file.json');
+
+      expect(fs.mkdir).not.toHaveBeenCalled();
+      expect(fs.writeFile).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getNetworkDeploymentPath', () => {
+    it('should return correct path for specified network', async () => {
+      const path = await fileUtils.getNetworkDeploymentPath('testnet');
+      expect(path).toContain('testnet');
+      expect(path).toContain('deployments');
     });
   });
   describe('getCompiledCode', () => {
@@ -84,16 +130,16 @@ describe('FileUtils', () => {
       // Setup mock data
       const mockSierra = { sierra: 'code' };
       const mockCasm = { casm: 'code' };
-      const mockPackageName = 'test_project';
+      const mockPackageName = mockConfig.paths.package_name;
       const contractName = 'ERC20';
-      const projectRoot = process.cwd();
+      const projectRoot = mockConfig.paths.root!;
+
       // Setup file paths
       const sierraFilePath = path.join(
         projectRoot,
         'target/dev',
         `${mockPackageName}_${contractName}.contract_class.json`,
       );
-      const scarbPath = path.join(projectRoot, 'Scarb.toml');
 
       const casmFilePath = path.join(
         projectRoot,
@@ -101,11 +147,9 @@ describe('FileUtils', () => {
         `${mockPackageName}_${contractName}.compiled_contract_class.json`,
       );
 
-      //Mock Implementation
+      // Mock Implementation
       (fs.readFile as jest.Mock).mockImplementation((filePath: unknown) => {
         switch (filePath) {
-          case scarbPath:
-            return Promise.resolve('[package]\nname = `${mockPackageName}`');
           case sierraFilePath:
             return Promise.resolve(Buffer.from(JSON.stringify(mockSierra)));
           case casmFilePath:
@@ -116,11 +160,8 @@ describe('FileUtils', () => {
             );
         }
       });
-      (toml.parse as jest.Mock).mockReturnValue({
-        package: { name: mockPackageName },
-      });
 
-      const code = await fileUtils.getCompiledCode(contractName);
+      const code = await fileUtils.getCompiledCode(contractName, mockConfig);
 
       expect(code.sierraCode).toEqual(mockSierra);
       expect(code.casmCode).toEqual(mockCasm);
@@ -131,30 +172,100 @@ describe('FileUtils', () => {
         new Error('File not found') as never,
       );
 
-      await expect(fileUtils.getCompiledCode('TestContract')).rejects.toThrow();
+      await expect(
+        fileUtils.getCompiledCode('TestContract', mockConfig),
+      ).rejects.toThrow();
     });
   });
   describe('saveContractAddress', () => {
-    it('should save contract address to json file', async () => {
-      const mockReadFile = fs.readFile as jest.Mock;
-      mockReadFile.mockResolvedValue('{}' as never);
-
-      await fileUtils.saveContractAddress('TestContract', '0x123');
-
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('deployed_contract_addresses.json'),
-        expect.stringContaining('"TestContract": "0x123"'),
-      );
+    beforeEach(() => {
+      (fs.readFile as jest.Mock).mockResolvedValue('{}' as never);
     });
-    it('should append to existing addresses', async () => {
-      (fs.readFile as jest.Mock).mockResolvedValue(
-        '{"ExistingContract": "0x456"}' as never,
-      );
-      await fileUtils.saveContractAddress('TestContract', '0x123');
+
+    it('should save contract address to json file', async () => {
+      await fileUtils.saveContractAddress('TestContract', '0x123', 'sepolia');
+
       expect(fs.writeFile).toHaveBeenCalledWith(
         expect.any(String),
-        expect.stringContaining('"ExistingContract": "0x456"'),
+        expect.stringContaining('"TestContract"'),
       );
+    });
+
+    it('should append to existing addresses', async () => {
+      (fs.readFile as jest.Mock).mockResolvedValue(
+        '{"ExistingContract":"0x456"}' as never,
+      );
+      jest.spyOn(fileUtils, 'loadConfigFile').mockResolvedValue(mockConfig);
+
+      await fileUtils.saveContractAddress(
+        'TestContract',
+        '0x123',
+        mockConfig.defaultNetwork,
+      );
+
+      // Check that writeFile was called once with a string containing both contracts
+      expect(fs.writeFile).toHaveBeenCalledTimes(1);
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringMatching(/ExistingContract.*0x456.*TestContract.*0x123/s),
+      );
+    });
+
+    it('should handle file read errors', async () => {
+      (fs.readFile as jest.Mock).mockRejectedValue(
+        new Error('Failed to read file') as never,
+      );
+
+      await expect(
+        fileUtils.saveContractAddress(
+          'TestContract',
+          '0x123',
+          mockConfig.defaultNetwork,
+        ),
+      ).rejects.toThrow();
+    });
+  });
+  // Add this test block after the saveContractAddress tests
+
+  describe('fetchContractAddress', () => {
+    it('should fetch contract address from deployment file', async () => {
+      // Mock readFile to return an address JSON
+      const mockAddresses = { TestContract: '0x123' };
+      (fs.readFile as jest.Mock).mockResolvedValue(
+        JSON.stringify(mockAddresses) as never,
+      );
+
+      const address = await fileUtils.fetchContractAddress(
+        'TestContract',
+        'sepolia',
+      );
+
+      expect(address).toBe('0x123');
+      expect(fs.readFile).toHaveBeenCalledWith(
+        expect.stringContaining('sepolia'),
+        'utf8',
+      );
+    });
+
+    it('should throw error when contract address not found', async () => {
+      (fs.readFile as jest.Mock).mockResolvedValue(
+        JSON.stringify({ OtherContract: '0x456' }) as never,
+      );
+      const address = await fileUtils.fetchContractAddress(
+        'TestContract',
+        'sepolia',
+      );
+      expect(address).toBeUndefined();
+    });
+
+    it('should handle file read errors', async () => {
+      (fs.readFile as jest.Mock).mockRejectedValue(
+        new Error('Cannot read file') as never,
+      );
+
+      await expect(
+        fileUtils.fetchContractAddress('TestContract', 'sepolia'),
+      ).rejects.toThrow('Cannot read file');
     });
   });
 

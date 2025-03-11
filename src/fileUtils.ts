@@ -1,14 +1,13 @@
 import { promises as fs, existsSync } from 'fs';
 import path from 'path';
-import toml from 'toml';
 import { logSuccess, logError } from './logger';
 import { logInfo } from './logger';
-const projectRoot = process.cwd();
+import { StarknetDeployConfig } from './types';
 
 export async function ensureDirectoryExists(dirPath: string): Promise<void> {
   try {
     await fs.mkdir(dirPath, { recursive: true });
-    logSuccess(`Created directory: ${dirPath}`);
+    logInfo(`Created directory: ${dirPath}`);
   } catch (error) {
     logError(`Error creating directory ${dirPath}: ${error}`);
     throw error;
@@ -17,10 +16,35 @@ export async function ensureDirectoryExists(dirPath: string): Promise<void> {
 
 // Ensures file exists or creates an empty JSON file if not
 export async function ensureFileExists(filePath: string): Promise<void> {
-  if (!existsSync(filePath)) {
-    console.log('File does not exist, creating a new one.');
-    await fs.writeFile(filePath, JSON.stringify({}));
+  try {
+    const directory = path.dirname(filePath);
+    if (!existsSync(directory)) {
+      await fs.mkdir(directory, { recursive: true });
+      logInfo(`Created directory: ${directory}`);
+    }
+
+    if (!existsSync(filePath)) {
+      await fs.writeFile(filePath, JSON.stringify({}));
+      logInfo(`Created file: ${filePath}`);
+    }
+  } catch (error) {
+    logError(`Error ensuring file exists: ${error}`);
+    throw error;
   }
+}
+
+export async function getNetworkDeploymentPath(
+  network: string,
+): Promise<string> {
+  const config = await loadConfigFile();
+  return path.join(
+    config.paths.root || process.cwd(),
+    'src',
+    'scripts',
+    'deployments',
+    network,
+    'deployed_contract_addresses.json',
+  );
 }
 
 /**
@@ -32,13 +56,11 @@ export async function ensureFileExists(filePath: string): Promise<void> {
 export async function saveContractAddress(
   contractName: string,
   contractAddress: string,
+  network: string,
 ) {
-  const filePath = path.join(
-    projectRoot,
-    'src/scripts/deployments',
-    'deployed_contract_addresses.json',
-  );
   try {
+    // Create directories and file if they don't exist
+    const filePath = await getNetworkDeploymentPath(network);
     await ensureFileExists(filePath);
     const data = await fs.readFile(filePath, 'utf8');
     const jsonData = data.trim() ? JSON.parse(data) : {};
@@ -54,51 +76,42 @@ export async function saveContractAddress(
 // Fetches contract address from JSON file
 export async function fetchContractAddress(
   contractName: string,
+  network: string,
 ): Promise<string | undefined> {
-  const filePath = path.join(
-    projectRoot,
-    'src/scripts/deployments',
-    'deployed_contract_addresses.json',
-  );
   try {
+    // Create directories and file if they don't exist
+    const filePath = await getNetworkDeploymentPath(network);
+    await ensureFileExists(filePath);
     const data = await fs.readFile(filePath, 'utf8');
     const jsonData = JSON.parse(data);
     return jsonData[contractName];
   } catch (error) {
-    logError(`Error fetching contract address:, ${error}`);
+    logError(`Error fetching contract address: ${error}`);
     throw error;
   }
 }
-
-// Retrieves package name from Scarb.toml
-export async function getPackageName(): Promise<string> {
-  const tomlPath = path.join(projectRoot, 'Scarb.toml');
-  try {
-    const tomlData = await fs.readFile(tomlPath, 'utf8');
-    const parsedToml = toml.parse(tomlData);
-    return parsedToml.package.name;
-  } catch (error) {
-    logError(`Error reading Scarb.toml:, ${error}`);
-    throw error;
-  }
-}
-
 /**
  * Retrieves the compiled Sierra and CASM code for a given contract.
  *
  * @param contractName - The name of the contract to retrieve compiled code for.
  * @returns am object containing the Sierra and CASM code.
  */
-export async function getCompiledCode(contractName: string) {
-  const packageName = await getPackageName();
+export async function getCompiledCode(
+  contractName: string,
+  config: StarknetDeployConfig,
+) {
+  const packageName = config.paths.package_name || '';
+  const projectRoot = config.paths.root || process.cwd();
+  const contractClassesDir = config.paths.contractClasses || 'target/dev';
+
   const sierraFilePath = path.join(
     projectRoot,
-    'target/dev',
+    contractClassesDir,
     `${packageName}_${contractName}.contract_class.json`,
   );
   const casmFilePath = path.join(
     projectRoot,
-    'target/dev',
+    contractClassesDir,
     `${packageName}_${contractName}.compiled_contract_class.json`,
   );
 
@@ -117,93 +130,120 @@ export async function getCompiledCode(contractName: string) {
 
 /**
  * Creates the project structure with the following directories:
- * - src/scripts/deployments
- * - src/scripts/tasks
+ * - scriptsDir/deployments
+ * - scriptsDir/tasks
  */
 export async function createProjectStructure() {
   try {
-    console.log('fetching package name');
-    const packageName = await getPackageName();
-    console.log('Package name:', packageName);
-    const scriptsDir = path.join(process.cwd(), 'src/scripts');
     console.log(LOGO);
-    logInfo(`Initializing project structure for ${packageName}...`);
+    logInfo(`Initializing project structure ...`);
+
+    const projectRoot = process.cwd();
+    const scriptsDir = 'src/scripts';
+    const tasksDir = `${scriptsDir}/tasks`;
+    const deploymentsDir = `${scriptsDir}/deployments`;
+
+    // Create configuration file
+    await createDefaultConfigFile(
+      path.join(projectRoot, 'starknet-deploy.config.ts'),
+    );
 
     // Create scripts directory and its subdirectories
-    await ensureDirectoryExists(path.join(scriptsDir, 'deployments'));
-    await ensureDirectoryExists(path.join(scriptsDir, 'tasks'));
-    console.log('Creating example task file');
+    await ensureDirectoryExists(path.join(projectRoot, deploymentsDir));
+    await ensureDirectoryExists(path.join(projectRoot, tasksDir));
+    logInfo('Creating example task file');
+
     // Create example task file
-    const exampleTaskPath = path.join(scriptsDir, 'tasks', 'example_task.ts');
-    console.log('Example task path:', exampleTaskPath);
+    const exampleTaskPath = path.join(projectRoot, tasksDir, 'example_task.ts');
+    logInfo(`Example task path: ${exampleTaskPath}`);
 
     await fs.writeFile(exampleTaskPath, exampleTaskContent);
 
     // Create example deployment script
     const exampleDeploymentPath = path.join(
-      scriptsDir,
-      'deployments',
+      projectRoot,
+      deploymentsDir,
       'example_deployment.ts',
     );
     await fs.writeFile(exampleDeploymentPath, exampleDeploymentScript);
 
-    // Create empty addresses file
-    const addressesPath = path.join(
-      scriptsDir,
-      'deployments',
-      'deployed_contract_addresses.json',
-    );
-    await fs.writeFile(addressesPath, JSON.stringify({}, null, 2));
     logSuccess('\nStarknet Deploy Project structure created successfully! 🚀');
     logInfo(`\nNext steps:
-  1. Add your scripts in src/scripts/tasks
-  2. Store your deployment artifacts in src/scripts/deployments`);
+  1. Add your scripts in ${tasksDir}
+  2. Store your deployment artifacts in ${deploymentsDir}`);
   } catch (error) {
     logError(`Failed to create project structure: ${error}`);
     process.exit(1);
   }
 }
 
-// Example deployment script content
-export const exampleDeploymentScript = `
-import "dotenv/config";
-import { initializeContractManager } from "starknet-deploy/dist/index";
-
-async function main() {
-  const contractManager = initializeContractManager();
-
-  await contractManager.deployContract({
-    contractName: "<contract_name>",
-  });
+/**
+ * Creates a default configuration file at the specified path
+ * @param configPath - Path where the config file should be created
+ */
+export async function createDefaultConfigFile(
+  configPath: string,
+): Promise<void> {
+  try {
+    await fs.writeFile(configPath, defaultConfigContent);
+    logInfo(`Created default configuration file at ${configPath}`);
+    logInfo('\nPlease update the configuration file with your:');
+    logInfo('1. Network private keys in the accounts array');
+    logInfo('2. Account addresses in the addresses array');
+  } catch (error) {
+    logError(`Failed to create default config file: ${error}`);
+    throw error;
+  }
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
+export async function loadConfigFile(): Promise<StarknetDeployConfig> {
+  const configPath = path.join(process.cwd(), 'starknet-deploy.config.ts');
+
+  // If config file doesn't exist, create it using the default template
+  if (!existsSync(configPath)) {
+    await createDefaultConfigFile(configPath);
     process.exit(1);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const loadedConfig = require(configPath);
+  // Support both default exports and direct module exports
+  return loadedConfig.default || loadedConfig;
+}
+
+// Example deployment script content
+export const exampleDeploymentScript = `
+import { initializeContractManager } from 'starknet-deploy';
+
+(async () => {
+  const contractManager = await initializeContractManager();
+
+  // Deploy a contract named 'MyContract' with constructor arguments
+  const contractAddress = await contractManager.deployContract({
+    contractName: 'MyContract',
+    constructorArgs: [123, '0x456'],
   });
+
+})();
 `;
 
 // Example task content
 export const exampleTaskContent = `
-import { initializeContractManager } from "starknet-deploy/dist/index";
-import { Command } from 'commander';
+import { initializeContractManager } from 'starknet-deploy';
 
-async function main() {
+(async () => {
+  const contractManager = await initializeContractManager();
 
-  const program = new Command();
-  program
-    .requiredOption('-c, --param <param_type>', 'Param definition')
+  // Invoke a function (e.g., 'transfer') to update the contract state
+  const txHash = await contractManager.invokeContract(
+    'MyToken', // Contract reference (name, address, or instance)
+    'transfer', // Function name
+    ['0x04a1496...', 1000], // Function arguments
+    20, // Optional fee buffer percentage (default is 20%)
+  );
 
-  program.parse(process.argv);
-  const options = program.opts();
-}
-
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});`;
+})();
+`;
 
 const LOGO = `
 ███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███╗   ██╗███████╗████████╗
@@ -220,3 +260,55 @@ const LOGO = `
 ██████╔╝███████╗██║     ███████╗╚██████╔╝   ██║                     
 ╚═════╝ ╚══════╝╚═╝     ╚══════╝ ╚═════╝    ╚═╝                                       
 `;
+
+// Default configuration file content that will be created during init
+export const defaultConfigContent = `import { StarknetDeployConfig } from 'starknet-deploy';
+import dotenv from 'dotenv';
+dotenv.config();
+
+const config: StarknetDeployConfig = {
+  defaultNetwork: "sepolia",
+  networks: {
+    sepolia: {
+      rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
+      accounts: [process.env.PRIVATE_KEY_1],
+      addresses: [process.env.ADDRESS_1],
+    },
+    local: {
+      rpcUrl: 'http://localhost:5050',
+      accounts: [],
+      addresses: []
+    }
+  },
+  paths: {
+    root: process.cwd(),
+    package_name: 'test_project', // scarb package name, prefix for contract classes
+    contractClasses: 'target/dev',
+    scripts: 'src/scripts',
+  }
+};
+
+export default config;
+`;
+
+export const defaultConfig: StarknetDeployConfig = {
+  defaultNetwork: 'sepolia',
+  networks: {
+    sepolia: {
+      rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
+      accounts: ['<privateKey1>'],
+      addresses: ['<address1>'],
+    },
+    local: {
+      rpcUrl: 'http://localhost:5050',
+      accounts: [],
+      addresses: [],
+    },
+  },
+  paths: {
+    root: process.cwd(),
+    package_name: 'test_project', // cairo package name
+    contractClasses: 'target/dev',
+    scripts: 'src/scripts',
+  },
+};

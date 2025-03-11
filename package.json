@@ -1,7 +1,14 @@
 {
-  "name": "starknet-deploy",
-  "description": "A simple StarkNet contract deployment tool.",
-  "version": "0.0.1",
+  "name": "@olas-protocol/starknet-deploy",
+  "description": "A toolkit for deploying and interacting with StarkNet smart contracts.",
+  "keywords": [
+    "starknet",
+    "deploy",
+    "contract",
+    "blockchain",
+    "cairo"
+  ],
+  "version": "0.0.0",
   "license": "MIT",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -15,9 +22,14 @@
     "lint": "eslint .",
     "lint-fix": "eslint . --fix",
     "test": "jest",
-    "prepare": "husky"
+    "prepare": "husky",
+    "release": "npm run build && changeset publish --access public",
+    "local-release": "changeset version && changeset publish",
+    "ci": "npm run lint && npm run format && npm run build",
+    "prepublishOnly": "npm run ci"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.28.1",
     "@eslint/js": "^9.14.0",
     "@jest/globals": "^29.7.0",
     "@types/eslint__js": "^8.42.3",
@@ -35,7 +47,6 @@
     "colors": "^1.4.0",
     "commander": "^13.1.0",
     "dotenv": "^16.4.5",
-    "starknet": "6.23.1",
-    "toml": "^3.0.0"
+    "starknet": "6.23.1"
   }
 }
