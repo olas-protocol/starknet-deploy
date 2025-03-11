@@ -40,7 +40,7 @@ npm install @olas-protocol/starknet-deploy
 Set up your project with a single command that creates the necessary directories, configuration file, and example scripts:
 
 ```sh
-npx starknet-deploy-init
+npx starknet-deploy init
 ```
 
 This command will:
