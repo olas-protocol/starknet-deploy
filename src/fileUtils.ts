@@ -90,6 +90,36 @@ export async function fetchContractAddress(
     throw error;
   }
 }
+
+/**
+ * Gets the path to a contract file based on type
+ *
+ * @param contractName - The name of the contract
+ * @param config - The Starknet deploy configuration
+ * @param fileType - The type of file ('sierra' or 'casm')
+ * @returns The full path to the contract file
+ */
+export function getContractFilePath(
+  contractName: string,
+  config: StarknetDeployConfig,
+  fileType: 'sierra' | 'casm',
+): string {
+  const packageName = config.paths.package_name || '';
+  const projectRoot = config.paths.root || process.cwd();
+  const contractClassesDir = config.paths.contractClasses || 'target/dev';
+
+  const fileExtension =
+    fileType === 'sierra'
+      ? '.contract_class.json'
+      : '.compiled_contract_class.json';
+
+  return path.join(
+    projectRoot,
+    contractClassesDir,
+    `${packageName}_${contractName}${fileExtension}`,
+  );
+}
+
 /**
  * Retrieves the compiled Sierra and CASM code for a given contract.
  *
@@ -100,20 +130,8 @@ export async function getCompiledCode(
   contractName: string,
   config: StarknetDeployConfig,
 ) {
-  const packageName = config.paths.package_name || '';
-  const projectRoot = config.paths.root || process.cwd();
-  const contractClassesDir = config.paths.contractClasses || 'target/dev';
-
-  const sierraFilePath = path.join(
-    projectRoot,
-    contractClassesDir,
-    `${packageName}_${contractName}.contract_class.json`,
-  );
-  const casmFilePath = path.join(
-    projectRoot,
-    contractClassesDir,
-    `${packageName}_${contractName}.compiled_contract_class.json`,
-  );
+  const sierraFilePath = getContractFilePath(contractName, config, 'sierra');
+  const casmFilePath = getContractFilePath(contractName, config, 'casm');
 
   const code = [sierraFilePath, casmFilePath].map(async (filePath) => {
     const file = await fs.readFile(filePath);
@@ -126,6 +144,32 @@ export async function getCompiledCode(
     sierraCode,
     casmCode,
   };
+}
+/**
+ * Calculates the bytecode length of a compiled contract class.
+ *
+ * @param contractName - The name of the contract to check
+ * @returns The length of the bytecode array
+ */
+export async function getByteCodeLength(contractName: string): Promise<number> {
+  try {
+    const config = await loadConfigFile();
+    const casmFilePath = getContractFilePath(contractName, config, 'casm');
+    if (!existsSync(casmFilePath)) {
+      throw new Error(`Contract file not found at ${casmFilePath}`);
+    }
+    const fileContent = await fs.readFile(casmFilePath, 'utf8');
+    const compiledContract = JSON.parse(fileContent);
+    const bytecodeLength = compiledContract.bytecode.length;
+    if (bytecodeLength > 81290) {
+      logError(
+        `Warning: Bytecode length (${bytecodeLength}) exceeds the limit of 81290!`,
+      );
+    }
+    return bytecodeLength;
+  } catch (error) {
+    throw new Error(`Error getting bytecode length: ${error}`);
+  }
 }
 
 /**
