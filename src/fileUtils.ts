@@ -161,11 +161,6 @@ export async function getByteCodeLength(contractName: string): Promise<number> {
     const fileContent = await fs.readFile(casmFilePath, 'utf8');
     const compiledContract = JSON.parse(fileContent);
     const bytecodeLength = compiledContract.bytecode.length;
-    if (bytecodeLength > 81290) {
-      logError(
-        `Warning: Bytecode length (${bytecodeLength}) exceeds the limit of 81290!`,
-      );
-    }
     return bytecodeLength;
   } catch (error) {
     throw new Error(`Error getting bytecode length: ${error}`);
@@ -195,11 +190,10 @@ export async function createProjectStructure() {
     // Create scripts directory and its subdirectories
     await ensureDirectoryExists(path.join(projectRoot, deploymentsDir));
     await ensureDirectoryExists(path.join(projectRoot, tasksDir));
-    logInfo('Creating example task file');
 
     // Create example task file
     const exampleTaskPath = path.join(projectRoot, tasksDir, 'example_task.ts');
-    logInfo(`Example task path: ${exampleTaskPath}`);
+    logInfo(`Created example task: ${exampleTaskPath}`);
 
     await fs.writeFile(exampleTaskPath, exampleTaskContent);
 
@@ -231,7 +225,7 @@ export async function createDefaultConfigFile(
   try {
     await fs.writeFile(configPath, defaultConfigContent);
     logInfo(`Created default configuration file at ${configPath}`);
-    logInfo('\nPlease update the configuration file with your:');
+    logInfo('Please update the configuration file with your:');
     logInfo('1. Network private keys in the accounts array');
     logInfo('2. Account addresses in the addresses array');
   } catch (error) {
@@ -306,7 +300,7 @@ const LOGO = `
 `;
 
 // Default configuration file content that will be created during init
-export const defaultConfigContent = `import { StarknetDeployConfig } from 'starknet-deploy';
+export const defaultConfigContent = `import { StarknetDeployConfig } from '@olas-protocol/starknet-deploy';
 import dotenv from 'dotenv';
 dotenv.config();
 
