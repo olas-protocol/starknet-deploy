@@ -72,7 +72,7 @@ The main configuration is defined in the starknet-deploy.config.ts file. Here yo
 Configuration File Example
 
 ```typescript
-import { StarknetDeployConfig } from 'starknet-deploy';
+import { StarknetDeployConfig } from '@olas-protocol/starknet-deploy';
 
 const config: StarknetDeployConfig = {
   // Default network used for deployments and interactions
