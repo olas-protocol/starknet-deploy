@@ -90,6 +90,36 @@ export async function fetchContractAddress(
     throw error;
   }
 }
+
+/**
+ * Gets the path to a contract file based on type
+ *
+ * @param contractName - The name of the contract
+ * @param config - The Starknet deploy configuration
+ * @param fileType - The type of file ('sierra' or 'casm')
+ * @returns The full path to the contract file
+ */
+export function getContractFilePath(
+  contractName: string,
+  config: StarknetDeployConfig,
+  fileType: 'sierra' | 'casm',
+): string {
+  const packageName = config.paths.package_name || '';
+  const projectRoot = config.paths.root || process.cwd();
+  const contractClassesDir = config.paths.contractClasses || 'target/dev';
+
+  const fileExtension =
+    fileType === 'sierra'
+      ? '.contract_class.json'
+      : '.compiled_contract_class.json';
+
+  return path.join(
+    projectRoot,
+    contractClassesDir,
+    `${packageName}_${contractName}${fileExtension}`,
+  );
+}
+
 /**
  * Retrieves the compiled Sierra and CASM code for a given contract.
  *
@@ -100,20 +130,8 @@ export async function getCompiledCode(
   contractName: string,
   config: StarknetDeployConfig,
 ) {
-  const packageName = config.paths.package_name || '';
-  const projectRoot = config.paths.root || process.cwd();
-  const contractClassesDir = config.paths.contractClasses || 'target/dev';
-
-  const sierraFilePath = path.join(
-    projectRoot,
-    contractClassesDir,
-    `${packageName}_${contractName}.contract_class.json`,
-  );
-  const casmFilePath = path.join(
-    projectRoot,
-    contractClassesDir,
-    `${packageName}_${contractName}.compiled_contract_class.json`,
-  );
+  const sierraFilePath = getContractFilePath(contractName, config, 'sierra');
+  const casmFilePath = getContractFilePath(contractName, config, 'casm');
 
   const code = [sierraFilePath, casmFilePath].map(async (filePath) => {
     const file = await fs.readFile(filePath);
@@ -126,6 +144,27 @@ export async function getCompiledCode(
     sierraCode,
     casmCode,
   };
+}
+/**
+ * Calculates the bytecode length of a compiled contract class.
+ *
+ * @param contractName - The name of the contract to check
+ * @returns The length of the bytecode array
+ */
+export async function getByteCodeLength(contractName: string): Promise<number> {
+  try {
+    const config = await loadConfigFile();
+    const casmFilePath = getContractFilePath(contractName, config, 'casm');
+    if (!existsSync(casmFilePath)) {
+      throw new Error(`Contract file not found at ${casmFilePath}`);
+    }
+    const fileContent = await fs.readFile(casmFilePath, 'utf8');
+    const compiledContract = JSON.parse(fileContent);
+    const bytecodeLength = compiledContract.bytecode.length;
+    return bytecodeLength;
+  } catch (error) {
+    throw new Error(`Error getting bytecode length: ${error}`);
+  }
 }
 
 /**
@@ -151,11 +190,10 @@ export async function createProjectStructure() {
     // Create scripts directory and its subdirectories
     await ensureDirectoryExists(path.join(projectRoot, deploymentsDir));
     await ensureDirectoryExists(path.join(projectRoot, tasksDir));
-    logInfo('Creating example task file');
 
     // Create example task file
     const exampleTaskPath = path.join(projectRoot, tasksDir, 'example_task.ts');
-    logInfo(`Example task path: ${exampleTaskPath}`);
+    logInfo(`Created example task: ${exampleTaskPath}`);
 
     await fs.writeFile(exampleTaskPath, exampleTaskContent);
 
@@ -187,7 +225,7 @@ export async function createDefaultConfigFile(
   try {
     await fs.writeFile(configPath, defaultConfigContent);
     logInfo(`Created default configuration file at ${configPath}`);
-    logInfo('\nPlease update the configuration file with your:');
+    logInfo('Please update the configuration file with your:');
     logInfo('1. Network private keys in the accounts array');
     logInfo('2. Account addresses in the addresses array');
   } catch (error) {

@@ -16,6 +16,7 @@ import {
   saveContractAddress,
   fetchContractAddress,
   loadConfigFile,
+  getByteCodeLength,
 } from './fileUtils';
 import { logError, logInfo, logSuccess, logDeploymentDetails } from './logger';
 import { getExplorerUrl, handleError, replacer } from './common';
@@ -113,6 +114,12 @@ export class ContractManager {
     );
 
     try {
+      const bytecodeLength = await getByteCodeLength(contractName);
+      if (bytecodeLength > 81290) {
+        throw new Error(
+          `Bytecode length (${bytecodeLength}) exceeds the limit of 81290!`,
+        );
+      }
       const { sierraCode, casmCode } = await getCompiledCode(
         contractName,
         config,

@@ -1,6 +1,16 @@
-# StarkNet Deploy
+<div align="center">
+  <img src="https://olas.info/wp-content/uploads/2025/03/starknet-deploy-logo.png" alt="StarkNet Deploy Logo" width="200"/>
+  <h1>StarkNet Deploy</h1>
+  <p>
+    <a href="https://www.npmjs.com/package/@olas-protocol/starknet-deploy">
+      <img src="https://img.shields.io/npm/v/@olas-protocol/starknet-deploy.svg?style=flat-square" alt="NPM version" />
+    </a>
+  </p>
+</div>
 
 **StarkNet Deploy** is a tool designed to streamline the deployment, interaction, and management of StarkNet contracts. This guide walks you through setting up your project, configuring your environment, and leveraging our public functions to work with contracts easily.
+
+📚 **[Check out our complete documentation](https://olas.gitbook.io/starknet-deploy)** for detailed guides.
 
 ## Table of Contents
 
@@ -59,7 +69,6 @@ your-project/
 │   └── scripts/
 │       ├── deployments/
 │       │   ├── example_deployment.ts
-│       │   └── deployed_contract_addresses.json
 │       └── tasks/
 │           └── example_task.ts
 └── starknet-deploy.config.ts
@@ -261,3 +270,6 @@ The following functions are publicly available via the Contract Manager:
 
 - **updateAccount(account: number | object)**
   Switches the active account for transactions by index (number) or using a custom account object.
+
+- **getByteCodeLength(contractName: string)**
+  Returns the length of the bytecode array for a compiled contract.
