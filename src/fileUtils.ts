@@ -213,7 +213,7 @@ export async function loadConfigFile(): Promise<StarknetDeployConfig> {
 
 // Example deployment script content
 export const exampleDeploymentScript = `
-import { initializeContractManager } from 'starknet-deploy';
+import { initializeContractManager } from '@olas-protocol/starknet-deploy';
 
 (async () => {
   const contractManager = await initializeContractManager();
@@ -229,7 +229,7 @@ import { initializeContractManager } from 'starknet-deploy';
 
 // Example task content
 export const exampleTaskContent = `
-import { initializeContractManager } from 'starknet-deploy';
+import { initializeContractManager } from '@olas-protocol/starknet-deploy';
 
 (async () => {
   const contractManager = await initializeContractManager();
@@ -262,7 +262,7 @@ const LOGO = `
 `;
 
 // Default configuration file content that will be created during init
-export const defaultConfigContent = `import { StarknetDeployConfig } from 'starknet-deploy';
+export const defaultConfigContent = `import { StarknetDeployConfig } from '@olas-protocol/starknet-deploy';
 import dotenv from 'dotenv';
 dotenv.config();
 
