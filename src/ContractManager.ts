@@ -6,7 +6,6 @@ import {
   stark,
   Contract,
   GetTransactionReceiptResponse,
-  ReceiptTx,
   Result,
   ArgsOrCalldata,
   RawArgsArray,
@@ -364,11 +363,9 @@ export class ContractManager {
     receipt: GetTransactionReceiptResponse,
     operationName: string,
   ): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const receiptTx = new ReceiptTx(receipt as any);
     const config = await loadConfigFile();
     const currentNetwork = config.defaultNetwork;
-    receiptTx.match({
+    receipt.match({
       success: (successReceipt) => {
         logSuccess(
           `${operationName} transaction succeeded\nExplorer URL: ${getExplorerUrl(currentNetwork, successReceipt.transaction_hash)}`,

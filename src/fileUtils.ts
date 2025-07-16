@@ -155,7 +155,7 @@ export async function createProjectStructure() {
 
     // Create example task file
     const exampleTaskPath = path.join(projectRoot, tasksDir, 'example_task.ts');
-    logInfo(`Example task path: ${exampleTaskPath}`);
+    logInfo(`Created example task: ${exampleTaskPath}`);
 
     await fs.writeFile(exampleTaskPath, exampleTaskContent);
 
@@ -187,7 +187,7 @@ export async function createDefaultConfigFile(
   try {
     await fs.writeFile(configPath, defaultConfigContent);
     logInfo(`Created default configuration file at ${configPath}`);
-    logInfo('\nPlease update the configuration file with your:');
+    logInfo('Please update the configuration file with your:');
     logInfo('1. Network private keys in the accounts array');
     logInfo('2. Account addresses in the addresses array');
   } catch (error) {
