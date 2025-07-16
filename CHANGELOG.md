@@ -1,5 +1,17 @@
 # @olas-protocol/starknet-deploy
 
+## 0.0.3
+
+### Patch Changes
+
+- cfb3773: Update starknet.js to v0.14.0 for compatibility with latest Starknet changes; includes minor fixes and improvements.
+
+## 0.0.3-beta.0
+
+### Patch Changes
+
+- Update starknet.js to v0.14.0 for compatibility with latest Starknet changes; includes minor fixes and improvements.
+
 ## 0.0.2
 
 ### Patch Changes

@@ -5,8 +5,7 @@ import {
   CallData,
   stark,
   Contract,
-  GetTxReceiptResponseWithoutHelper,
-  ReceiptTx,
+  GetTransactionReceiptResponse,
   Result,
   ArgsOrCalldata,
   RawArgsArray,
@@ -361,13 +360,12 @@ export class ContractManager {
 
   // Helper function to handle transaction receipt
   async handleTxReceipt(
-    receipt: GetTxReceiptResponseWithoutHelper,
+    receipt: GetTransactionReceiptResponse,
     operationName: string,
   ): Promise<void> {
-    const receiptTx = new ReceiptTx(receipt);
     const config = await loadConfigFile();
     const currentNetwork = config.defaultNetwork;
-    receiptTx.match({
+    receipt.match({
       success: (successReceipt) => {
         logSuccess(
           `${operationName} transaction succeeded\nExplorer URL: ${getExplorerUrl(currentNetwork, successReceipt.transaction_hash)}`,
@@ -375,10 +373,6 @@ export class ContractManager {
       },
       reverted: (revertedReceipt) => {
         const message = `${operationName} transaction reverted: ${revertedReceipt.revert_reason}`;
-        handleError(message);
-      },
-      rejected: (rejectedReceipt) => {
-        const message = `${operationName} transaction rejected with status: ${rejectedReceipt.status}`;
         handleError(message);
       },
       _: () => {

@@ -155,7 +155,7 @@ export async function createProjectStructure() {
 
     // Create example task file
     const exampleTaskPath = path.join(projectRoot, tasksDir, 'example_task.ts');
-    logInfo(`Example task path: ${exampleTaskPath}`);
+    logInfo(`Created example task at: ${exampleTaskPath}`);
 
     await fs.writeFile(exampleTaskPath, exampleTaskContent);
 
@@ -166,11 +166,13 @@ export async function createProjectStructure() {
       'example_deployment.ts',
     );
     await fs.writeFile(exampleDeploymentPath, exampleDeploymentScript);
+    logInfo(`Created example deployment at: ${exampleDeploymentPath}`);
 
     logSuccess('\nStarknet Deploy Project structure created successfully! 🚀');
     logInfo(`\nNext steps:
-  1. Add your scripts in ${tasksDir}
-  2. Store your deployment artifacts in ${deploymentsDir}`);
+  1. Update your configuration in starknet-deploy.config.ts
+  2. Add your scripts in ${tasksDir}
+  3. Store your deployment scripts in ${deploymentsDir}`);
   } catch (error) {
     logError(`Failed to create project structure: ${error}`);
     process.exit(1);
@@ -187,7 +189,7 @@ export async function createDefaultConfigFile(
   try {
     await fs.writeFile(configPath, defaultConfigContent);
     logInfo(`Created default configuration file at ${configPath}`);
-    logInfo('\nPlease update the configuration file with your:');
+    logInfo('Please update the configuration file with your:');
     logInfo('1. Network private keys in the accounts array');
     logInfo('2. Account addresses in the addresses array');
   } catch (error) {
@@ -212,7 +214,12 @@ export async function loadConfigFile(): Promise<StarknetDeployConfig> {
 }
 
 // Example deployment script content
-export const exampleDeploymentScript = `
+export const exampleDeploymentScript = `/**
+ * Example Deployment Script
+ * 
+ * To run this script:
+ * npx tsx src/scripts/deployments/example_deployment.ts
+ */
 import { initializeContractManager } from '@olas-protocol/starknet-deploy';
 
 (async () => {
@@ -228,7 +235,12 @@ import { initializeContractManager } from '@olas-protocol/starknet-deploy';
 `;
 
 // Example task content
-export const exampleTaskContent = `
+export const exampleTaskContent = `/**
+ * Example Task Script
+ * 
+ * To run this script:
+ * npx tsx src/scripts/tasks/example_task.ts
+ */
 import { initializeContractManager } from '@olas-protocol/starknet-deploy';
 
 (async () => {
@@ -270,9 +282,9 @@ const config: StarknetDeployConfig = {
   defaultNetwork: "sepolia",
   networks: {
     sepolia: {
-      rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
-      accounts: [process.env.PRIVATE_KEY_1],
-      addresses: [process.env.ADDRESS_1],
+      rpcUrl: 'https://starknet-sepolia.public.blastapi.io/rpc/v0_8',
+      accounts: [process.env.PRIVATE_KEY_1!],
+      addresses: [process.env.ADDRESS_1!],
     },
     local: {
       rpcUrl: 'http://localhost:5050',
@@ -295,7 +307,7 @@ export const defaultConfig: StarknetDeployConfig = {
   defaultNetwork: 'sepolia',
   networks: {
     sepolia: {
-      rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
+      rpcUrl: 'https://starknet-sepolia.public.blastapi.io/rpc/v0_8',
       accounts: ['<privateKey1>'],
       addresses: ['<address1>'],
     },
