@@ -8,7 +8,7 @@
     "blockchain",
     "cairo"
   ],
-  "version": "0.0.3-beta.0",
+  "version": "0.0.3",
   "homepage": "https://github.com/olas-protocol/starknet-deploy#readme",
   "license": "MIT",
   "repository": {
