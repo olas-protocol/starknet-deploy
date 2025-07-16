@@ -27,7 +27,7 @@
     "lint": "eslint .",
     "lint-fix": "eslint . --fix",
     "test": "jest",
-    "prepare": "husky",
+    "prepare": "npm run build",
     "release": "npm run build && changeset publish --access public",
     "local-release": "changeset version && changeset publish",
     "ci": "npm run lint && npm run format && npm run build",
@@ -38,7 +38,6 @@
     "@eslint/js": "^9.14.0",
     "@jest/globals": "^29.7.0",
     "@types/eslint__js": "^8.42.3",
-    "@types/node": "^22.9.0",
     "eslint": "^9.14.0",
     "husky": "^9.1.7",
     "prettier": "3.3.3",
@@ -49,9 +48,11 @@
     "typescript-eslint": "^8.13.0"
   },
   "dependencies": {
+    "@types/node": "^24.0.14",
     "colors": "^1.4.0",
     "commander": "^13.1.0",
     "dotenv": "^16.4.5",
-    "starknet": "7.6.4"
+    "starknet": "7.6.4",
+    "tsx": "^4.20.3"
   }
 }
