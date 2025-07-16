@@ -270,6 +270,3 @@ The following functions are publicly available via the Contract Manager:
 
 - **updateAccount(account: number | object)**
   Switches the active account for transactions by index (number) or using a custom account object.
-
-- **getByteCodeLength(contractName: string)**
-  Returns the length of the bytecode array for a compiled contract.
