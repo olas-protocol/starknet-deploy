@@ -1,0 +1,8 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "@olas-protocol/starknet-deploy": "0.0.2"
+  },
+  "changesets": ["ready-actors-jog"]
+}
