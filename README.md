@@ -1,6 +1,16 @@
-# StarkNet Deploy
+<div align="center">
+  <img src="https://olas.info/wp-content/uploads/2025/04/starknet-deploy-logo.png" alt="StarkNet Deploy Logo" width="600"/>
+  <h1>StarkNet Deploy</h1>
+  <p>
+    <a href="https://www.npmjs.com/package/@olas-protocol/starknet-deploy">
+      <img src="https://img.shields.io/npm/v/@olas-protocol/starknet-deploy.svg?style=flat-square" alt="NPM version" />
+    </a>
+  </p>
+</div>
 
 **StarkNet Deploy** is a tool designed to streamline the deployment, interaction, and management of StarkNet contracts. This guide walks you through setting up your project, configuring your environment, and leveraging our public functions to work with contracts easily.
+
+📚 **[Check out our complete documentation](https://olas.gitbook.io/starknet-deploy)** for detailed guides.
 
 ## Table of Contents
 
@@ -59,7 +69,6 @@ your-project/
 │   └── scripts/
 │       ├── deployments/
 │       │   ├── example_deployment.ts
-│       │   └── deployed_contract_addresses.json
 │       └── tasks/
 │           └── example_task.ts
 └── starknet-deploy.config.ts
@@ -72,7 +81,7 @@ The main configuration is defined in the starknet-deploy.config.ts file. Here yo
 Configuration File Example
 
 ```typescript
-import { StarknetDeployConfig } from '@olas-protocol/starknet-deploy';
+import { StarknetDeployConfig } from 'starknet-deploy';
 
 const config: StarknetDeployConfig = {
   // Default network used for deployments and interactions
@@ -81,7 +90,7 @@ const config: StarknetDeployConfig = {
   // Network settings
   networks: {
     sepolia: {
-      rpcUrl: 'https://starknet-sepolia.public.blastapi.io', // RPC URL for Sepolia
+      rpcUrl: 'https://starknet-sepolia.public.blastapi.io/rpc/v0_8', // RPC URL for Sepolia
       accounts: ['<privateKey1>'], // Array of private keys for transactions
       addresses: ['<address1>'], // Array of addresses for the  given private keys
     },
@@ -261,3 +270,6 @@ The following functions are publicly available via the Contract Manager:
 
 - **updateAccount(account: number | object)**
   Switches the active account for transactions by index (number) or using a custom account object.
+
+- **getByteCodeLength(contractName: string)**
+  Returns the length of the bytecode array for a compiled contract.

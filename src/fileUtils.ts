@@ -270,7 +270,7 @@ const config: StarknetDeployConfig = {
   defaultNetwork: "sepolia",
   networks: {
     sepolia: {
-      rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
+      rpcUrl: 'https://starknet-sepolia.public.blastapi.io/rpc/v0_8',
       accounts: [process.env.PRIVATE_KEY_1],
       addresses: [process.env.ADDRESS_1],
     },
@@ -295,7 +295,7 @@ export const defaultConfig: StarknetDeployConfig = {
   defaultNetwork: 'sepolia',
   networks: {
     sepolia: {
-      rpcUrl: 'https://starknet-sepolia.public.blastapi.io',
+      rpcUrl: 'https://starknet-sepolia.public.blastapi.io/rpc/v0_8',
       accounts: ['<privateKey1>'],
       addresses: ['<address1>'],
     },

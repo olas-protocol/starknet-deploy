@@ -52,6 +52,6 @@
     "colors": "^1.4.0",
     "commander": "^13.1.0",
     "dotenv": "^16.4.5",
-    "starknet": "6.23.1"
+    "starknet": "7.6.4"
   }
 }
